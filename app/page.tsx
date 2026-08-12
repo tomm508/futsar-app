@@ -2,6 +2,9 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
+import { db } from '../lib/firebase';
+import { collection, doc, getDoc, setDoc, getDocs, updateDoc, onSnapshot, deleteDoc } from 'firebase/firestore';
+
 import { 
   Menu, X, MapPin, Instagram, AlertTriangle, LogOut, 
   Calendar, Wallet, ClipboardList, MessageCircle, Clock, Shirt, Star, QrCode,
@@ -119,14 +122,12 @@ export default function Page() {
 
   // Presence Tracking
   useEffect(() => {
-    if (user && user.role !== 'admin') {
-      const updatePresence = () => {
-        const savedAccountStr = localStorage.getItem(`futsar_account_${user.wa}`);
-        if (savedAccountStr) {
-          const acc = JSON.parse(savedAccountStr);
-          acc.lastActive = Date.now();
-          localStorage.setItem(`futsar_account_${user.wa}`, JSON.stringify(acc));
-          localStorage.setItem('futsar_user', JSON.stringify(acc));
+    if (user && user.role !== 'admin' && user.wa) {
+      const updatePresence = async () => {
+        try {
+          await updateDoc(doc(db, "users", user.wa), { lastActive: Date.now() });
+        } catch (e) {
+          console.error(e);
         }
       };
       
@@ -134,50 +135,61 @@ export default function Page() {
       const interval = setInterval(updatePresence, 30000); // 30 seconds
       return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user?.wa]);
 
   useEffect(() => {
-    // Check local storage for logged in user on mount
-    const savedUser = localStorage.getItem('futsar_user');
-    if (savedUser) {
-      const parsedUser = JSON.parse(savedUser);
-      if (parsedUser.role !== 'admin') {
-        const latestAccount = localStorage.getItem(`futsar_account_${parsedUser.wa}`);
-        if (latestAccount) {
-          setUser(JSON.parse(latestAccount));
-          localStorage.setItem('futsar_user', latestAccount);
-        } else {
-          setUser(parsedUser);
-        }
-      } else {
-        setUser(parsedUser);
-      }
-    }
-    const savedSettings = localStorage.getItem('futsar_settings');
-    if (savedSettings) {
-      try {
-        const parsed = JSON.parse(savedSettings);
+    const unsubSettings = onSnapshot(doc(db, "settings", "global"), (docSnap) => {
+      if (docSnap.exists()) {
+        const parsed = docSnap.data() as AppSettings;
         setSettings({ 
           ...defaultSettings, 
           ...parsed, 
           jadwalList: parsed.jadwalList || defaultSettings.jadwalList,
           announcements: parsed.announcements || defaultSettings.announcements 
         });
-      } catch (e) {
-        console.error("Failed to parse settings", e);
+      } else {
+        setDoc(doc(db, "settings", "global"), defaultSettings);
       }
+    });
+
+    const savedWa = localStorage.getItem('futsar_user_wa');
+    let unsubUser: () => void;
+    if (savedWa && savedWa !== 'ADMIN') {
+      unsubUser = onSnapshot(doc(db, "users", savedWa), (docSnap) => {
+        if (docSnap.exists()) {
+          setUser(docSnap.data() as User);
+        } else {
+          setUser(null);
+          localStorage.removeItem('futsar_user_wa');
+        }
+        setIsLoaded(true);
+      });
+    } else if (savedWa === 'ADMIN') {
+      const adminUser: User = {
+        nama: 'Administrator',
+        posisi: 'Admin',
+        wa: 'ADMIN',
+        id: 'ADMIN',
+        role: 'admin'
+      };
+      setUser(adminUser);
+      setIsLoaded(true);
+    } else {
+      setIsLoaded(true);
     }
-    setIsLoaded(true);
+
+    return () => {
+      unsubSettings();
+      if (unsubUser) unsubUser();
+    };
   }, []);
 
-  const fetchAllUsers = () => {
+  const fetchAllUsers = async () => {
+    const querySnapshot = await getDocs(collection(db, "users"));
     const users: User[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith('futsar_account_')) {
-        users.push(JSON.parse(localStorage.getItem(key)!));
-      }
-    }
+    querySnapshot.forEach((docSnap) => {
+      users.push(docSnap.data() as User);
+    });
     setAllUsers(users);
   };
 
@@ -187,9 +199,9 @@ export default function Page() {
     }
   }, [activeModal]);
 
-  const updateSettings = (newSettings: AppSettings) => {
+  const updateSettings = async (newSettings: AppSettings) => {
     setSettings(newSettings);
-    localStorage.setItem('futsar_settings', JSON.stringify(newSettings));
+    await setDoc(doc(db, "settings", "global"), newSettings);
   };
 
   const handleRegister = (e: FormEvent<HTMLFormElement>) => {
@@ -209,27 +221,26 @@ export default function Page() {
       status: 'pending'
     };
 
-    // Save to local storage mock database
-    localStorage.setItem(`futsar_account_${wa}`, JSON.stringify(newUser));
-    
-    // Auto login
-    localStorage.setItem('futsar_user', JSON.stringify(newUser));
-    setUser(newUser);
-    setActiveModal(null);
+    // Save to Firestore
+    setDoc(doc(db, "users", wa), newUser).then(() => {
+      localStorage.setItem('futsar_user_wa', wa);
+      setUser(newUser);
+      setActiveModal(null);
+    });
   };
 
-  const handleLogin = (e: FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const wa = formData.get('wa') as string;
     const password = formData.get('password') as string;
 
-    const savedAccountStr = localStorage.getItem(`futsar_account_${wa}`);
+    const userDoc = await getDoc(doc(db, "users", wa));
     
-    if (savedAccountStr) {
-      const savedAccount = JSON.parse(savedAccountStr);
+    if (userDoc.exists()) {
+      const savedAccount = userDoc.data() as User;
       if (savedAccount.password === password) {
-        localStorage.setItem('futsar_user', JSON.stringify(savedAccount));
+        localStorage.setItem('futsar_user_wa', wa);
         setUser(savedAccount);
         setActiveModal(null);
         setLoginError(false);
@@ -254,11 +265,11 @@ export default function Page() {
       const adminUser: User = {
         nama: 'Administrator',
         posisi: 'Admin',
-        wa: validWa,
+        wa: 'ADMIN',
         id: 'ADMIN',
         role: 'admin'
       };
-      localStorage.setItem('futsar_user', JSON.stringify(adminUser));
+      localStorage.setItem('futsar_user_wa', 'ADMIN');
       setUser(adminUser);
       setActiveModal(null);
       setLoginError(false);
@@ -269,11 +280,11 @@ export default function Page() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('futsar_user');
+    localStorage.removeItem('futsar_user_wa');
     setUser(null);
   };
 
-  const handleUpdateProfile = (e: FormEvent<HTMLFormElement>) => {
+  const handleUpdateProfile = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
     
@@ -282,9 +293,8 @@ export default function Page() {
 
     const updatedUser = { ...user, posisi };
     
-    localStorage.setItem(`futsar_account_${user.wa}`, JSON.stringify(updatedUser));
-    localStorage.setItem('futsar_user', JSON.stringify(updatedUser));
-    setUser(updatedUser);
+    await updateDoc(doc(db, "users", user.wa), { posisi });
+    // User state is updated via onSnapshot
     
     alert('Profil berhasil diperbarui!');
     setActiveModal(null);
@@ -321,10 +331,7 @@ export default function Page() {
           ctx?.drawImage(img, 0, 0, width, height);
           const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
           
-          const updatedUser = { ...user, avatarUrl: dataUrl };
-          localStorage.setItem(`futsar_account_${user.wa}`, JSON.stringify(updatedUser));
-          localStorage.setItem('futsar_user', JSON.stringify(updatedUser));
-          setUser(updatedUser);
+          updateDoc(doc(db, "users", user.wa), { avatarUrl: dataUrl }).catch(console.error);
         };
         img.src = reader.result as string;
       };
@@ -400,8 +407,7 @@ export default function Page() {
             date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
           };
           const newSettings = { ...settings, gallery: [newPhoto, ...(settings.gallery || [])] };
-          setSettings(newSettings);
-          localStorage.setItem('futsar_settings', JSON.stringify(newSettings));
+          updateSettings(newSettings);
           alert('Foto berhasil diunggah ke Galeri!');
         };
         img.src = reader.result as string;
@@ -414,21 +420,13 @@ export default function Page() {
     if (confirm('Yakin ingin menghapus foto ini?')) {
       const newGallery = (settings.gallery || []).filter((p) => p.id !== id);
       const newSettings = { ...settings, gallery: newGallery };
-      setSettings(newSettings);
-      localStorage.setItem('futsar_settings', JSON.stringify(newSettings));
+      updateSettings(newSettings);
     }
   };
 
   const handleUpdatePaymentCycle = (cycle: 'mingguan' | 'bulanan') => {
     if (!user) return;
-    const updatedUser = { ...user, paymentCycle: cycle };
-    setUser(updatedUser);
-    localStorage.setItem('futsar_user', JSON.stringify(updatedUser));
-    const savedAccounts = localStorage.getItem(`futsar_account_${user.wa}`);
-    if (savedAccounts) {
-      const acc = JSON.parse(savedAccounts);
-      localStorage.setItem(`futsar_account_${user.wa}`, JSON.stringify({ ...acc, paymentCycle: cycle }));
-    }
+    updateDoc(doc(db, "users", user.wa), { paymentCycle: cycle }).catch(console.error);
   };
 
   if (!isLoaded) return null;
@@ -1222,59 +1220,36 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    loadUsers();
-  }, []);
-
-  function loadUsers() {
-    const pUsers: User[] = [];
-    const aUsers: User[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith('futsar_account_')) {
-        const u = JSON.parse(localStorage.getItem(key)!);
+    const unsub = onSnapshot(collection(db, "users"), (snapshot) => {
+      const pUsers: User[] = [];
+      const aUsers: User[] = [];
+      snapshot.forEach(docSnap => {
+        const u = docSnap.data() as User;
         if (u.status === 'pending') {
           pUsers.push(u);
         } else if (u.status === 'active') {
           aUsers.push(u);
         }
-      }
-    }
-    setPendingUsers(pUsers);
-    setActiveUsers(aUsers);
-  }
+      });
+      setPendingUsers(pUsers);
+      setActiveUsers(aUsers);
+    });
+    return () => unsub();
+  }, []);
 
-  const handleApprove = (wa: string) => {
-    const key = `futsar_account_${wa}`;
-    const uStr = localStorage.getItem(key);
-    if (uStr) {
-      const u = JSON.parse(uStr);
-      u.status = 'active';
-      localStorage.setItem(key, JSON.stringify(u));
-      loadUsers();
-    }
+  const handleApprove = async (wa: string) => {
+    await updateDoc(doc(db, "users", wa), { status: 'active' });
   };
 
-  const handleReject = (wa: string) => {
-    const key = `futsar_account_${wa}`;
-    const uStr = localStorage.getItem(key);
-    if (uStr) {
-      const u = JSON.parse(uStr);
-      u.status = 'rejected';
-      localStorage.setItem(key, JSON.stringify(u));
-      loadUsers();
-    }
+  const handleReject = async (wa: string) => {
+    await updateDoc(doc(db, "users", wa), { status: 'rejected' });
   };
 
-  const handleTogglePayment = (wa: string, currentStatus: boolean) => {
-    const key = `futsar_account_${wa}`;
-    const uStr = localStorage.getItem(key);
-    if (uStr) {
-      const u = JSON.parse(uStr);
-      u.isPaid = !currentStatus;
-      u.lastPaymentDate = !currentStatus ? new Date().toISOString() : null;
-      localStorage.setItem(key, JSON.stringify(u));
-      loadUsers();
-    }
+  const handleTogglePayment = async (wa: string, currentStatus: boolean) => {
+    await updateDoc(doc(db, "users", wa), { 
+      isPaid: !currentStatus, 
+      lastPaymentDate: !currentStatus ? new Date().toISOString() : null 
+    });
   };
   
   const handleKasSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -1624,8 +1599,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
                       <button 
                         onClick={() => {
                           if (confirm(`Yakin ingin menghapus akun ${u.nama}?`)) {
-                            localStorage.removeItem(`futsar_account_${u.wa}`);
-                            loadUsers();
+                            deleteDoc(doc(db, "users", u.wa));
                           }
                         }}
                         className="text-[#e53e3e] hover:text-white transition-colors"
