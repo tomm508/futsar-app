@@ -19,6 +19,7 @@ type User = {
   paymentCycle?: 'mingguan' | 'bulanan';
   isPaid?: boolean;
   lastPaymentDate?: string | null;
+  lastActive?: number;
   role?: 'member' | 'admin';
   status?: 'pending' | 'active' | 'rejected';
   avatarUrl?: string;
@@ -115,6 +116,25 @@ export default function Page() {
   
   const [loginError, setLoginError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Presence Tracking
+  useEffect(() => {
+    if (user && user.role !== 'admin') {
+      const updatePresence = () => {
+        const savedAccountStr = localStorage.getItem(`futsar_account_${user.wa}`);
+        if (savedAccountStr) {
+          const acc = JSON.parse(savedAccountStr);
+          acc.lastActive = Date.now();
+          localStorage.setItem(`futsar_account_${user.wa}`, JSON.stringify(acc));
+          localStorage.setItem('futsar_user', JSON.stringify(acc));
+        }
+      };
+      
+      updatePresence();
+      const interval = setInterval(updatePresence, 30000); // 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   useEffect(() => {
     // Check local storage for logged in user on mount
@@ -401,29 +421,13 @@ export default function Page() {
 
   const handleUpdatePaymentCycle = (cycle: 'mingguan' | 'bulanan') => {
     if (!user) return;
-    const updatedUser = { ...user, paymentCycle: cycle, isPaid: false, lastPaymentDate: null };
+    const updatedUser = { ...user, paymentCycle: cycle };
     setUser(updatedUser);
     localStorage.setItem('futsar_user', JSON.stringify(updatedUser));
     const savedAccounts = localStorage.getItem(`futsar_account_${user.wa}`);
     if (savedAccounts) {
       const acc = JSON.parse(savedAccounts);
-      localStorage.setItem(`futsar_account_${user.wa}`, JSON.stringify({ ...acc, paymentCycle: cycle, isPaid: false, lastPaymentDate: null }));
-    }
-  };
-
-  const handleSimulatePayment = () => {
-    if (!user) return;
-    const updatedUser = { 
-      ...user, 
-      isPaid: true, 
-      lastPaymentDate: new Date().toISOString() 
-    };
-    setUser(updatedUser);
-    localStorage.setItem('futsar_user', JSON.stringify(updatedUser));
-    const savedAccounts = localStorage.getItem(`futsar_account_${user.wa}`);
-    if (savedAccounts) {
-      const acc = JSON.parse(savedAccounts);
-      localStorage.setItem(`futsar_account_${user.wa}`, JSON.stringify({ ...acc, isPaid: true, lastPaymentDate: updatedUser.lastPaymentDate }));
+      localStorage.setItem(`futsar_account_${user.wa}`, JSON.stringify({ ...acc, paymentCycle: cycle }));
     }
   };
 
@@ -989,13 +993,10 @@ export default function Page() {
                           Unduh QRIS
                         </a>
                       )}
-                      <button onClick={handleSimulatePayment} className="inline-block bg-[#27ae60] text-white px-5 py-2.5 rounded-full text-[12px] font-bold border-none cursor-pointer shadow-md transition-transform active:scale-95">
-                        Konfirmasi Bayar
-                      </button>
                     </div>
                     
                     <div className="mt-4 text-[11px] color-[#aaa] text-left bg-[#25d366]/10 p-3 rounded-lg border-l-4 border-[#25d366]">
-                      <p className="text-gray-600 m-0 leading-relaxed">Konfirmasi pembayaran ke Admin melalui WhatsApp dengan menyertakan bukti transfer.</p>
+                      <p className="text-gray-600 m-0 leading-relaxed">Setelah transfer, silakan konfirmasi pembayaran ke Admin melalui WhatsApp dengan menyertakan bukti transfer.</p>
                     </div>
                   </div>
                 )}
@@ -1218,23 +1219,28 @@ export default function Page() {
 
 function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: AppSettings, onUpdateSettings: (s: AppSettings) => void, onLogout: () => void }) {
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
+  const [activeUsers, setActiveUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    loadPendingUsers();
+    loadUsers();
   }, []);
 
-  function loadPendingUsers() {
-    const users: User[] = [];
+  function loadUsers() {
+    const pUsers: User[] = [];
+    const aUsers: User[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key?.startsWith('futsar_account_')) {
         const u = JSON.parse(localStorage.getItem(key)!);
         if (u.status === 'pending') {
-          users.push(u);
+          pUsers.push(u);
+        } else if (u.status === 'active') {
+          aUsers.push(u);
         }
       }
     }
-    setPendingUsers(users);
+    setPendingUsers(pUsers);
+    setActiveUsers(aUsers);
   }
 
   const handleApprove = (wa: string) => {
@@ -1244,7 +1250,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
       const u = JSON.parse(uStr);
       u.status = 'active';
       localStorage.setItem(key, JSON.stringify(u));
-      loadPendingUsers();
+      loadUsers();
     }
   };
 
@@ -1255,7 +1261,19 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
       const u = JSON.parse(uStr);
       u.status = 'rejected';
       localStorage.setItem(key, JSON.stringify(u));
-      loadPendingUsers();
+      loadUsers();
+    }
+  };
+
+  const handleTogglePayment = (wa: string, currentStatus: boolean) => {
+    const key = `futsar_account_${wa}`;
+    const uStr = localStorage.getItem(key);
+    if (uStr) {
+      const u = JSON.parse(uStr);
+      u.isPaid = !currentStatus;
+      u.lastPaymentDate = !currentStatus ? new Date().toISOString() : null;
+      localStorage.setItem(key, JSON.stringify(u));
+      loadUsers();
     }
   };
   
@@ -1550,6 +1568,74 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
                     </div>
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+
+          <div className="bg-[#111] border border-[#333] p-6 rounded-2xl">
+            <h3 className="text-[#27ae60] font-black text-xl mb-4 uppercase tracking-widest">Manajemen Uang Kas</h3>
+            <p className="text-xs text-[#888] mb-5">Konfirmasi pembayaran anggota yang aktif.</p>
+            <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#27ae60] pr-2">
+              {activeUsers.length === 0 ? (
+                <p className="text-xs text-[#888] italic">Belum ada anggota yang aktif.</p>
+              ) : (
+                activeUsers.map((u) => (
+                  <div key={u.wa} className={`flex flex-col md:flex-row justify-between items-start md:items-center bg-[#1a1a1a] p-4 rounded-lg border-l-4 ${u.isPaid ? 'border-[#27ae60]' : 'border-[#ff4d4d]'} gap-4`}>
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-white mb-1 uppercase tracking-wide">{u.nama} <span className="text-[10px] text-[#aaa] ml-2">({u.id})</span></p>
+                      <p className="text-[11px] text-[#aaa] m-0">No WA: {u.wa} • {u.paymentCycle === 'bulanan' ? 'Bulanan' : 'Mingguan'}</p>
+                    </div>
+                    <div className="flex gap-2 w-full md:w-auto shrink-0">
+                      <button 
+                        onClick={() => handleTogglePayment(u.wa, !!u.isPaid)} 
+                        className={`flex-1 md:flex-none px-4 py-2 border rounded-lg text-[10px] font-bold uppercase transition-colors text-center ${u.isPaid ? 'bg-[#ff4d4d]/10 text-[#ff4d4d] hover:bg-[#ff4d4d] hover:text-white border-[#ff4d4d]' : 'bg-[#27ae60]/10 text-[#27ae60] hover:bg-[#27ae60] hover:text-white border-[#27ae60]'}`}
+                      >
+                        {u.isPaid ? 'Batalkan Kas' : 'Konfirmasi Lunas'}
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="bg-[#111] border border-[#333] p-6 rounded-2xl">
+            <h3 className="text-[#9b59b6] font-black text-xl mb-4 uppercase tracking-widest">Manajemen Akun Terdaftar</h3>
+            <p className="text-xs text-[#888] mb-5">Daftar semua anggota aktif. Hapus akun jika melanggar.</p>
+            <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#9b59b6] pr-2">
+              {activeUsers.length === 0 ? (
+                <p className="text-xs text-[#888] italic">Belum ada anggota yang aktif.</p>
+              ) : (
+                activeUsers.map((u) => {
+                  const isOnline = u.lastActive && (Date.now() - u.lastActive < 60000); // 1 menit
+                  return (
+                    <div key={u.wa} className="flex justify-between items-center bg-[#1a1a1a] p-4 rounded-lg border-l-4 border-[#9b59b6] gap-4">
+                      <div className="text-left flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-bold text-white uppercase tracking-wide">{u.nama}</p>
+                          <span 
+                            className="flex items-center justify-center w-2.5 h-2.5 rounded-full" 
+                            style={{ backgroundColor: isOnline ? '#27ae60' : '#e53e3e', boxShadow: isOnline ? '0 0 8px rgba(39,174,96,0.5)' : 'none' }}
+                            title={isOnline ? "Online" : "Offline"}
+                          ></span>
+                        </div>
+                        <p className="text-[11px] text-[#aaa] m-0">No WA: {u.wa} • Sandi: {u.password || '-'}</p>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          if (confirm(`Yakin ingin menghapus akun ${u.nama}?`)) {
+                            localStorage.removeItem(`futsar_account_${u.wa}`);
+                            loadUsers();
+                          }
+                        }}
+                        className="text-[#e53e3e] hover:text-white transition-colors"
+                        title="Hapus Akun"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
