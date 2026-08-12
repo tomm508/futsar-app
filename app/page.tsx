@@ -447,13 +447,9 @@ export default function Page() {
               loop 
               muted 
               playsInline 
-              key={settings.bgVideoUrl || '/logo-futsar.mp4'}
               className="absolute inset-0 w-full h-full object-cover z-0 filter brightness-90 transition-opacity duration-1000"
             >
-              <source src={settings.bgVideoUrl || '/logo-futsar.mp4'} type="video/mp4" />
               <source src="/logo-futsar.mp4" type="video/mp4" />
-              <source src="/futsar-bg.mp4" type="video/mp4" />
-              <source src="/video-bg.mp4" type="video/mp4" />
             </video>
             {/* Subtle Gradient Overlays for contrast */}
             <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 z-10 pointer-events-none"></div>
@@ -1294,23 +1290,6 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
     alert('Gambar QRIS berhasil dihapus!');
   };
 
-  const handleVideoBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        onUpdateSettings({ ...settings, bgVideoUrl: base64String });
-        alert('Video latar belakang berhasil diunggah!');
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleResetVideoBg = () => {
-    onUpdateSettings({ ...settings, bgVideoUrl: '/logo-futsar.mp4' });
-    alert('Video latar belakang dikembalikan ke default (/logo-futsar.mp4)!');
-  };
 
   const handleAddSchedule = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -1425,35 +1404,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
             </div>
           </div>
 
-          {/* UPLOAD VIDEO LATAR BELAKANG */}
-          <div className="bg-[#111] border border-[#333] p-6 rounded-2xl">
-            <h3 className="text-[#3498db] font-black text-xl mb-1 uppercase tracking-widest flex items-center gap-2">
-              🎬 Video Latar Belakang (.MP4)
-            </h3>
-            <p className="text-xs text-[#888] mb-4">Unggah video bergerak (.mp4) dari HP untuk latar belakang halaman awal.</p>
-            
-            <div className="flex flex-col gap-3">
-              <div className="relative overflow-hidden inline-block w-full">
-                <button type="button" className="w-full bg-[#3498db] text-white border-none p-3 rounded-lg text-sm font-bold uppercase cursor-pointer hover:bg-opacity-80 transition-colors shadow-md">
-                  📤 Unggah Video MP4 dari HP
-                </button>
-                <input 
-                  type="file" 
-                  accept="video/mp4, video/webm" 
-                  onChange={handleVideoBgUpload} 
-                  className="absolute left-0 top-0 w-full h-full opacity-0 cursor-pointer"
-                />
-              </div>
 
-              <button 
-                type="button" 
-                onClick={handleResetVideoBg}
-                className="w-full bg-[#1a1a1a] text-[#aaa] border border-[#333] p-2.5 rounded-lg text-xs font-bold uppercase hover:text-white hover:bg-white/5 transition-colors"
-              >
-                🔄 Kembalikan ke Video Default
-              </button>
-            </div>
-          </div>
 
           <div className="bg-[#111] border border-[#333] p-6 rounded-2xl">
             <h3 className="text-[#9b59b6] font-black text-xl mb-1 uppercase tracking-widest">Tambah Pengumuman</h3>
@@ -1582,7 +1533,8 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
                 <p className="text-xs text-[#888] italic">Belum ada anggota yang aktif.</p>
               ) : (
                 activeUsers.map((u) => {
-                  const isOnline = u.lastActive && (Date.now() - u.lastActive < 60000); // 1 menit
+                  const now = new Date().getTime();
+                  const isOnline = u.lastActive && (now - u.lastActive < 60000); // 1 menit
                   return (
                     <div key={u.wa} className="flex justify-between items-center bg-[#1a1a1a] p-4 rounded-lg border-l-4 border-[#9b59b6] gap-4">
                       <div className="text-left flex-1">
