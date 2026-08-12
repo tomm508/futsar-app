@@ -54,6 +54,7 @@ type GalleryPhoto = {
 };
 
 type AppSettings = {
+  activePaymentCycle?: 'mingguan' | 'bulanan';
   kasMingguan: number;
   kasBulanan: number;
   jadwalList: Schedule[];
@@ -66,6 +67,7 @@ type AppSettings = {
 };
 
 const defaultSettings: AppSettings = {
+  activePaymentCycle: 'mingguan',
   kasMingguan: 20000,
   kasBulanan: 80000,
   adminWa: '081244558899',
@@ -346,7 +348,8 @@ export default function Page() {
 
   const getNextDueDate = (userData: User) => {
     const date = userData.lastPaymentDate ? new Date(userData.lastPaymentDate) : new Date();
-    if (userData.paymentCycle === 'bulanan') {
+    const cycle = settings.activePaymentCycle || 'mingguan';
+    if (cycle === 'bulanan') {
       date.setMonth(date.getMonth() + 1);
     } else {
       date.setDate(date.getDate() + 7);
@@ -357,7 +360,7 @@ export default function Page() {
   const getDaysRemaining = (userData: User) => {
     if (!userData.lastPaymentDate) return 0;
     const dueDate = new Date(userData.lastPaymentDate);
-    if (userData.paymentCycle === 'bulanan') {
+    if (settings.activePaymentCycle === 'bulanan') {
       dueDate.setMonth(dueDate.getMonth() + 1);
     } else {
       dueDate.setDate(dueDate.getDate() + 7);
@@ -393,10 +396,7 @@ export default function Page() {
     }
   };
 
-  const handleUpdatePaymentCycle = (cycle: 'mingguan' | 'bulanan') => {
-    if (!user) return;
-    updateDoc(doc(db, "users", user.wa), { paymentCycle: cycle }).catch(console.error);
-  };
+
 
   if (!isLoaded) return null;
 
@@ -878,20 +878,9 @@ export default function Page() {
                 <h2 className="text-[#d4af37] text-[24px] font-black uppercase tracking-[1px] mt-2 mb-5 border-b border-[#333] pb-2">Tagihan Kas</h2>
                 
                 <div className="flex flex-col gap-2 mb-5 text-left">
-                  <label className="text-[11px] text-[#888] font-bold uppercase tracking-[1px]">Siklus Pembayaran:</label>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleUpdatePaymentCycle('mingguan')}
-                      className={`flex-1 py-2 rounded-lg text-[11px] font-bold uppercase transition-colors ${(!user.paymentCycle || user.paymentCycle === 'mingguan') ? 'bg-[#d4af37] text-black' : 'bg-[#1a1a1a] text-[#888] border border-[#333]'}`}
-                    >
-                      / Minggu
-                    </button>
-                    <button 
-                      onClick={() => handleUpdatePaymentCycle('bulanan')}
-                      className={`flex-1 py-2 rounded-lg text-[11px] font-bold uppercase transition-colors ${(user.paymentCycle === 'bulanan') ? 'bg-[#d4af37] text-black' : 'bg-[#1a1a1a] text-[#888] border border-[#333]'}`}
-                    >
-                      / Bulan
-                    </button>
+                  <label className="text-[11px] text-[#888] font-bold uppercase tracking-[1px]">Siklus Pembayaran Aktif:</label>
+                  <div className="bg-[#1a1a1a] text-[#d4af37] border border-[#d4af37]/30 py-2.5 rounded-lg text-[13px] font-black uppercase text-center tracking-widest shadow-inner">
+                    {(!settings.activePaymentCycle || settings.activePaymentCycle === 'mingguan') ? '/ Minggu' : '/ Bulan'}
                   </div>
                 </div>
 
@@ -909,7 +898,7 @@ export default function Page() {
                   <div className="flex justify-between items-center border-b border-dashed border-[#333] py-3">
                     <span className="text-[#888] text-[11px] uppercase tracking-[1px] font-semibold">Nominal Tagihan</span>
                     <span className={`${user.isPaid ? 'text-[#27ae60]' : 'text-[#ff4d4d]'} text-[16px] font-black text-right`}>
-                      {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(user.paymentCycle === 'bulanan' ? settings.kasBulanan : settings.kasMingguan)}
+                      {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(settings.activePaymentCycle === 'bulanan' ? settings.kasBulanan : settings.kasMingguan)}
                     </span>
                   </div>
                   {user.isPaid && (
@@ -984,7 +973,7 @@ export default function Page() {
                       <div key={u.id} className={`flex justify-between items-center bg-[#1a1a1a] p-3 rounded-lg border-l-4 ${u.isPaid ? 'border-[#27ae60]' : 'border-[#ff4d4d]'}`}>
                         <div className="flex flex-col text-left">
                           <span className="text-[14px] font-bold text-white capitalize">{u.nama}</span>
-                          <span className="text-[10px] text-[#aaa]">{u.id} • {u.paymentCycle === 'bulanan' ? 'Bulanan' : 'Mingguan'}</span>
+                          <span className="text-[10px] text-[#aaa]">{u.id} • {settings.activePaymentCycle === 'bulanan' ? 'Bulanan' : 'Mingguan'}</span>
                         </div>
                         <div className="flex flex-col items-end">
                           {u.isPaid ? (
@@ -1218,8 +1207,9 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
     const fd = new FormData(e.currentTarget);
     const m = parseInt(fd.get('kasMingguan') as string, 10);
     const b = parseInt(fd.get('kasBulanan') as string, 10);
-    onUpdateSettings({ ...settings, kasMingguan: m, kasBulanan: b });
-    alert('Pengaturan nominal kas berhasil disimpan!');
+    const cycle = fd.get('activePaymentCycle') as 'mingguan' | 'bulanan';
+    onUpdateSettings({ ...settings, kasMingguan: m, kasBulanan: b, activePaymentCycle: cycle });
+    alert('Pengaturan nominal kas dan siklus berhasil disimpan!');
   };
 
   const handleAdminSecuritySubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -1330,6 +1320,13 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
             <p className="text-xs text-[#888] mb-6">Atur nominal tagihan dan kode QRIS pembayaran.</p>
             
             <form onSubmit={handleKasSubmit} className="flex flex-col gap-4 mb-6 pb-6 border-b border-[#333]">
+              <div>
+                <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Siklus Pembayaran Aktif</label>
+                <select name="activePaymentCycle" defaultValue={settings.activePaymentCycle || 'mingguan'} className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#d4af37] transition-colors">
+                  <option value="mingguan">Mingguan (/ Minggu)</option>
+                  <option value="bulanan">Bulanan (/ Bulan)</option>
+                </select>
+              </div>
               <div>
                 <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Nominal Mingguan (Rp)</label>
                 <input type="number" name="kasMingguan" defaultValue={settings.kasMingguan} className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#d4af37] transition-colors" required />
@@ -1474,7 +1471,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
                   <div key={u.wa} className={`flex flex-col md:flex-row justify-between items-start md:items-center bg-[#1a1a1a] p-4 rounded-lg border-l-4 ${u.isPaid ? 'border-[#27ae60]' : 'border-[#ff4d4d]'} gap-4`}>
                     <div className="text-left">
                       <p className="text-sm font-bold text-white mb-1 uppercase tracking-wide">{u.nama} <span className="text-[10px] text-[#aaa] ml-2">({u.id})</span></p>
-                      <p className="text-[11px] text-[#aaa] m-0">No WA: {u.wa} • {u.paymentCycle === 'bulanan' ? 'Bulanan' : 'Mingguan'}</p>
+                      <p className="text-[11px] text-[#aaa] m-0">No WA: {u.wa} • {settings.activePaymentCycle === 'bulanan' ? 'Bulanan' : 'Mingguan'}</p>
                     </div>
                     <div className="flex gap-2 w-full md:w-auto shrink-0">
                       <button 
