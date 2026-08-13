@@ -123,6 +123,7 @@ export default function Page() {
   
   const [loginError, setLoginError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
 
   // Presence Tracking
   useEffect(() => {
@@ -154,6 +155,7 @@ export default function Page() {
       } else {
         setDoc(doc(db, "settings", "global"), defaultSettings);
       }
+      setIsSettingsLoaded(true);
     });
 
     const savedWa = localStorage.getItem('futsar_user_wa');
@@ -400,7 +402,7 @@ export default function Page() {
 
 
 
-  if (!isLoaded) return null;
+  if (!isLoaded || !isSettingsLoaded) return null;
 
   return (
     <main className="min-h-screen w-full bg-black text-white overflow-x-hidden relative flex flex-col">
