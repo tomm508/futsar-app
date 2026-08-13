@@ -9,7 +9,7 @@ import {
   Menu, X, MapPin, Instagram, AlertTriangle, LogOut, 
   Calendar, Wallet, ClipboardList, MessageCircle, Clock, Shirt, Star, QrCode,
   Users, Info, FileText, CheckCircle, XCircle, Camera, Edit2, UserCircle, Image as ImageIcon, Trash2, Plus,
-  Lock, ShieldCheck
+  Lock, ShieldCheck, Bot, Send
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -116,7 +116,7 @@ const defaultSettings: AppSettings = {
 
 export default function Page() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeModal, setActiveModal] = useState<'daftar' | 'masuk' | 'jadwal' | 'kas' | 'admin_login' | 'rekap_kas' | 'taktik' | 'info' | 'chat_admin' | 'profile' | 'gallery' | null>(null);
+  const [activeModal, setActiveModal] = useState<'daftar' | 'masuk' | 'jadwal' | 'kas' | 'admin_login' | 'rekap_kas' | 'taktik' | 'info' | 'chat_admin' | 'profile' | 'gallery' | 'ai_bot' | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [allUsers, setAllUsers] = useState<User[]>([]);
@@ -126,6 +126,36 @@ export default function Page() {
   const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [selectedGalleryPhoto, setSelectedGalleryPhoto] = useState<string | null>(null);
+  
+  const [aiMessages, setAiMessages] = useState<{role: 'user' | 'ai', text: string}[]>([
+    { role: 'ai', text: 'Halo! Saya Asisten AI Futsar. Ada yang bisa saya bantu tentang info klub, taktik futsal, atau jadwal?' }
+  ]);
+  const [aiInput, setAiInput] = useState('');
+  const [isAiTyping, setIsAiTyping] = useState(false);
+  
+  const handleSendAiMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiInput.trim() || isAiTyping) return;
+    
+    const userMsg = aiInput.trim();
+    setAiInput('');
+    setAiMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setIsAiTyping(true);
+    
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMsg, history: aiMessages })
+      });
+      const data = await response.json();
+      setAiMessages(prev => [...prev, { role: 'ai', text: data.text }]);
+    } catch (error) {
+      setAiMessages(prev => [...prev, { role: 'ai', text: 'Maaf, terjadi kesalahan teknis.' }]);
+    } finally {
+      setIsAiTyping(false);
+    }
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -705,6 +735,18 @@ export default function Page() {
                   <div>
                     <h3 className="text-lg font-bold mb-1 text-white">Chat Admin</h3>
                     <p className="text-xs text-gray-500">Hubungi pengurus</p>
+                  </div>
+                </button>
+                
+                <button onClick={() => setActiveModal('ai_bot')} className="bg-[#111]/60 backdrop-blur-md border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="bg-[#1abc9c]/10 p-3 rounded-xl">
+                      <Bot className="text-[#1abc9c]" size={24} />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold mb-1 text-white">Asisten AI</h3>
+                    <p className="text-xs text-gray-500">Tanya seputar Futsar</p>
                   </div>
                 </button>
               </div>
