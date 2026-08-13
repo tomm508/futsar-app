@@ -218,6 +218,16 @@ export default function Page() {
     try {
       const msgId = `${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
       await setDoc(doc(db, "community_messages", msgId), newMsg);
+
+      // Auto-prune: jika pesan sudah lebih dari 100, bersihkan pesan-pesan terlama secara otomatis
+      if (communityMessages.length >= 100) {
+        const oldestMsgs = communityMessages.slice(0, communityMessages.length - 80);
+        oldestMsgs.forEach(async (m) => {
+          try {
+            await deleteDoc(doc(db, "community_messages", m.id));
+          } catch (_) {}
+        });
+      }
     } catch (err) {
       console.error('Error sending community message:', err);
     }
@@ -230,6 +240,17 @@ export default function Page() {
       } catch (err) {
         console.error('Error deleting community message:', err);
       }
+    }
+  };
+
+  const handleClearAllCommunityMessages = async () => {
+    if (!confirm('Apakah Admin yakin ingin menghapus SEMUA riwayat obrolan di ruang chat?')) return;
+    try {
+      const qSnap = await getDocs(collection(db, "community_messages"));
+      const promises = qSnap.docs.map(d => deleteDoc(doc(db, "community_messages", d.id)));
+      await Promise.all(promises);
+    } catch (err) {
+      console.error('Error clearing community messages:', err);
     }
   };
 
@@ -1440,12 +1461,25 @@ export default function Page() {
                     </div>
                   </div>
                   
-                  <button 
-                    onClick={() => setActiveModal(null)} 
-                    className="w-8 h-8 rounded-lg bg-[#222] hover:bg-[#333] text-[#aaa] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                  >
-                    <X size={18} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {user?.role === 'admin' && communityMessages.length > 0 && (
+                      <button
+                        onClick={handleClearAllCommunityMessages}
+                        className="px-2.5 py-1.5 bg-[#e53e3e]/15 hover:bg-[#e53e3e] text-[#e53e3e] hover:text-white border border-[#e53e3e]/30 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        title="Bersihkan Semua Pesan Chat"
+                      >
+                        <Trash2 size={12} />
+                        <span className="hidden sm:inline">Reset Chat</span>
+                      </button>
+                    )}
+                    
+                    <button 
+                      onClick={() => setActiveModal(null)} 
+                      className="w-8 h-8 rounded-lg bg-[#222] hover:bg-[#333] text-[#aaa] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Tabs */}
