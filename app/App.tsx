@@ -1053,8 +1053,9 @@ export default function Page() {
                       <p className="text-sm text-gray-500 italic">Belum ada foto di galeri.</p>
                     </div>
                   ) : (
-                    settings.gallery.map((photo) => (
+                    settings.gallery.map((photo, index) => (
                       <div key={photo.id} className="relative group aspect-square rounded-lg overflow-hidden bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] cursor-pointer" onClick={() => setSelectedGalleryPhoto(photo.url)}>
+                        <div className="absolute top-2 left-2 bg-black/60 text-[#d4af37] text-[10px] font-bold px-2 py-1 rounded-md z-10">#{settings.gallery!.length - index}</div>
                         <img src={photo.url} alt="Gallery" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2 text-left pointer-events-none">
                           <span className="text-white text-[10px] font-bold truncate">{photo.uploader}</span>
@@ -1194,19 +1195,19 @@ export default function Page() {
 
       {selectedGalleryPhoto && (
         <div 
-          className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-md"
+          className="fixed inset-0 bg-black/95 z-[600] flex items-center justify-center p-4 backdrop-blur-xl animate-in fade-in duration-300"
           onClick={() => setSelectedGalleryPhoto(null)}
         >
           <button 
             onClick={() => setSelectedGalleryPhoto(null)}
-            className="absolute top-4 right-4 md:top-8 md:right-8 bg-[#111] border border-[#333] p-3 rounded-full text-white hover:bg-[#222] hover:text-[#d4af37] transition-colors z-[210] shadow-xl"
+            className="absolute top-4 right-4 md:top-8 md:right-8 bg-black/50 border border-white/20 p-3 rounded-full text-white hover:bg-white/20 transition-colors z-[610] shadow-xl"
           >
             <X size={24} />
           </button>
           <img 
             src={selectedGalleryPhoto} 
             alt="Fullscreen Gallery" 
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl relative z-[205]"
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl relative z-[605] animate-in zoom-in-50 duration-300"
             onClick={(e) => e.stopPropagation()} 
           />
         </div>
@@ -1697,8 +1698,9 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
             <h3 className="text-white font-bold text-lg mb-1 uppercase tracking-widest">Manajemen Galeri ({ (settings.gallery || []).length })</h3>
             <p className="text-xs text-[#888] mb-4">Kelola foto kegiatan klub yang telah diunggah.</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {(settings.gallery || []).map((photo) => (
+              {(settings.gallery || []).map((photo, index) => (
                 <div key={photo.id} className="relative group aspect-square bg-[#1a1a1a]/60 backdrop-blur-sm rounded-lg overflow-hidden border border-[#333]">
+                  <div className="absolute top-2 left-2 bg-black/60 text-[#d4af37] text-[10px] font-bold px-2 py-1 rounded-md z-10">#{(settings.gallery || []).length - index}</div>
                   <img src={photo.url} alt="Galeri" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-between">
                     <button 
