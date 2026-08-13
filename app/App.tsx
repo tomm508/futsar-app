@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, useRef, FormEvent } from 'react';
 import { db } from '../lib/firebase';
 import { collection, doc, getDoc, setDoc, getDocs, updateDoc, onSnapshot, deleteDoc } from 'firebase/firestore';
 
@@ -132,6 +132,13 @@ export default function Page() {
   ]);
   const [aiInput, setAiInput] = useState('');
   const [isAiTyping, setIsAiTyping] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (activeModal === 'ai_bot') {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [aiMessages, isAiTyping, activeModal]);
   
   const handleSendAiMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1205,6 +1212,7 @@ export default function Page() {
                         </div>
                       </div>
                     )}
+                    <div ref={chatEndRef} />
                   </div>
                   
                   <form onSubmit={handleSendAiMessage} className="flex gap-2 mt-auto border-t border-[#333] pt-4 relative z-50">
