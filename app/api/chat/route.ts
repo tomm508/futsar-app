@@ -8,7 +8,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ text: "API Key Gemini belum diatur. Pastikan GEMINI_API_KEY sudah terpasang." }, { status: 500 });
     }
 
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ 
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
     const { message, history } = await req.json();
     
     let prompt = "Kamu adalah Asisten AI ramah khusus untuk Futsar Club (Futsal Club). Jawablah pertanyaan seputar futsal, taktik, atau sekadar obrolan santai yang memotivasi dengan gaya santai dan akrab. Jangan terlalu panjang, ringkas saja.\n\n";
@@ -21,7 +28,7 @@ export async function POST(req: NextRequest) {
     prompt += `Member: ${message}\nKamu:`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-3.6-flash",
       contents: prompt,
     });
     
