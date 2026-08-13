@@ -61,6 +61,7 @@ type AppSettings = {
   announcements: Announcement[];
   qrisImageUrl?: string;
   bgVideoUrl?: string;
+  bgInsideUrl?: string;
   gallery: GalleryPhoto[];
   adminWa?: string;
   adminPassword?: string;
@@ -73,6 +74,7 @@ const defaultSettings: AppSettings = {
   adminWa: '081244558899',
   adminPassword: 'admin',
   bgVideoUrl: '/logo-futsar.mp4',
+  bgInsideUrl: '/logo-futsar.mp4',
   gallery: [],
   jadwalList: [
     {
@@ -401,28 +403,48 @@ export default function Page() {
   if (!isLoaded) return null;
 
   return (
-    <main className="min-h-screen w-full bg-[#0a0a0a] text-white overflow-x-hidden relative flex flex-col">
+    <main className="min-h-screen w-full bg-black text-white overflow-x-hidden relative flex flex-col">
+      {/* Global Media Background */}
+      <div className="fixed inset-0 w-full h-full z-0 bg-[#0a0a0a]">
+        {(() => {
+          const activeBg = user ? (settings.bgInsideUrl || '/logo-futsar.mp4') : (settings.bgVideoUrl || '/logo-futsar.mp4');
+          const isVideo = activeBg.match(/\.(mp4|webm|ogg)$/i) || activeBg.includes('youtube.com') || activeBg === '/logo-futsar.mp4';
+          
+          if (isVideo) {
+            return (
+              <video 
+                key={activeBg}
+                autoPlay 
+                loop 
+                muted 
+                playsInline 
+                className="absolute inset-0 w-full h-full object-cover z-0 filter brightness-50 opacity-40 transition-opacity duration-1000"
+              >
+                <source src={activeBg} />
+              </video>
+            );
+          }
+          
+          return (
+            <img 
+              key={activeBg}
+              src={activeBg} 
+              alt="Background" 
+              className="absolute inset-0 w-full h-full object-cover z-0 filter brightness-50 opacity-40 transition-opacity duration-1000" 
+              onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1518605368461-1ee51188cd8d?q=80&w=2000&auto=format&fit=crop'; }}
+            />
+          );
+        })()}
+        {/* Subtle Gradient Overlays for contrast */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/90 z-10 pointer-events-none"></div>
+      </div>
+      
       {/* Global Gradient Background */}
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(212,175,55,0.08)_0%,transparent_60%)] z-0 pointer-events-none"></div>
       
       {/* --- NOT LOGGED IN: HERO SECTION --- */}
       {!user && (
         <div className="relative w-full min-h-[100dvh] flex flex-col items-center justify-between p-6 z-10 overflow-hidden">
-          {/* Background Video & Overlay */}
-          <div className="absolute inset-0 w-full h-full z-0 bg-[#0a0a0a]">
-            {/* Primary Moving Video Background */}
-            <video 
-              autoPlay 
-              loop 
-              muted 
-              playsInline 
-              className="absolute inset-0 w-full h-full object-cover z-0 filter brightness-90 transition-opacity duration-1000"
-            >
-              <source src="/logo-futsar.mp4" type="video/mp4" />
-            </video>
-            {/* Subtle Gradient Overlays for contrast */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 z-10 pointer-events-none"></div>
-          </div>
 
           {/* Top Menu Button */}
           <div className="w-full flex justify-between items-center z-50 pt-2">
@@ -480,7 +502,7 @@ export default function Page() {
       {user && user.role !== 'admin' && user.status === 'pending' && (
         <div className="w-full min-h-screen flex flex-col items-center justify-center p-8 z-10 animate-in fade-in duration-500 relative">
            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.08)_0%,transparent_70%)] pointer-events-none z-0"></div>
-           <div className="bg-[#111] border border-[#333] p-8 md:p-12 rounded-3xl text-center max-w-md w-full relative z-10 shadow-2xl">
+           <div className="bg-[#111]/60 backdrop-blur-md border border-[#333] p-8 md:p-12 rounded-3xl text-center max-w-md w-full relative z-10 shadow-2xl">
              <div className="w-20 h-20 bg-[#d4af37]/10 rounded-full flex items-center justify-center mx-auto mb-6">
                <Clock size={40} className="text-[#d4af37] animate-pulse" />
              </div>
@@ -499,7 +521,7 @@ export default function Page() {
       {user && user.role !== 'admin' && user.status === 'rejected' && (
         <div className="w-full min-h-screen flex flex-col items-center justify-center p-8 z-10 animate-in fade-in duration-500 relative">
            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(229,62,62,0.08)_0%,transparent_70%)] pointer-events-none z-0"></div>
-           <div className="bg-[#111] border border-[#333] p-8 md:p-12 rounded-3xl text-center max-w-md w-full relative z-10 shadow-2xl">
+           <div className="bg-[#111]/60 backdrop-blur-md border border-[#333] p-8 md:p-12 rounded-3xl text-center max-w-md w-full relative z-10 shadow-2xl">
              <div className="w-20 h-20 bg-[#e53e3e]/10 rounded-full flex items-center justify-center mx-auto mb-6">
                <XCircle size={40} className="text-[#e53e3e]" />
              </div>
@@ -547,7 +569,7 @@ export default function Page() {
           <main className="flex-1 w-full max-w-7xl mx-auto flex flex-col gap-6 p-4 md:p-8 z-10 relative">
             <section className="w-full flex flex-col gap-6">
               {/* Member Card */}
-              <div className="bg-gradient-to-br from-[#151515] to-[#0a0a0a] border border-[#d4af37]/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl">
+              <div className="bg-gradient-to-br from-[#151515]/70 to-[#0a0a0a]/70 backdrop-blur-md border border-[#d4af37]/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl">
                 <div className="absolute right-[-20px] bottom-[-20px] opacity-5">
                   <Shirt size={240} className="text-[#d4af37]" />
                 </div>
@@ -557,7 +579,7 @@ export default function Page() {
                       {user.avatarUrl ? (
                         <img src={user.avatarUrl} alt="Avatar" className="w-16 h-16 rounded-full object-cover border-2 border-[#d4af37]" />
                       ) : (
-                        <div className="w-16 h-16 rounded-full bg-[#1a1a1a] border-2 border-[#d4af37] flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-full bg-[#1a1a1a]/60 backdrop-blur-sm border-2 border-[#d4af37] flex items-center justify-center">
                           <UserCircle size={32} className="text-[#d4af37]" />
                         </div>
                       )}
@@ -591,7 +613,7 @@ export default function Page() {
 
               {/* Grid Menu */}
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 flex-1">
-                <button onClick={() => setActiveModal('jadwal')} className="bg-[#111] border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
+                <button onClick={() => setActiveModal('jadwal')} className="bg-[#111]/60 backdrop-blur-md border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
                   <div className="flex justify-between items-start mb-4">
                     <div className="bg-[#d4af37]/10 p-3 rounded-xl">
                       <Calendar className="text-[#d4af37]" size={24} />
@@ -603,7 +625,7 @@ export default function Page() {
                   </div>
                 </button>
 
-                <button onClick={() => setActiveModal('kas')} className="bg-[#111] border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
+                <button onClick={() => setActiveModal('kas')} className="bg-[#111]/60 backdrop-blur-md border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
                   <div className="flex justify-between items-start mb-4">
                     <div className="bg-[#27ae60]/10 p-3 rounded-xl">
                       <Wallet className="text-[#27ae60]" size={24} />
@@ -618,7 +640,7 @@ export default function Page() {
                   </div>
                 </button>
 
-                <button onClick={() => setActiveModal('rekap_kas')} className="bg-[#111] border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
+                <button onClick={() => setActiveModal('rekap_kas')} className="bg-[#111]/60 backdrop-blur-md border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
                   <div className="flex justify-between items-start mb-4">
                     <div className="bg-[#e67e22]/10 p-3 rounded-xl">
                       <Users className="text-[#e67e22]" size={24} />
@@ -630,7 +652,7 @@ export default function Page() {
                   </div>
                 </button>
 
-                <button onClick={() => setActiveModal('gallery')} className="bg-[#111] border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
+                <button onClick={() => setActiveModal('gallery')} className="bg-[#111]/60 backdrop-blur-md border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
                   <div className="flex justify-between items-start mb-4">
                     <div className="bg-[#9b59b6]/10 p-3 rounded-xl">
                       <ImageIcon className="text-[#9b59b6]" size={24} />
@@ -642,7 +664,7 @@ export default function Page() {
                   </div>
                 </button>
 
-                <button onClick={() => setActiveModal('taktik')} className="bg-[#111] border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
+                <button onClick={() => setActiveModal('taktik')} className="bg-[#111]/60 backdrop-blur-md border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
                   <div className="flex justify-between items-start mb-4">
                     <div className="bg-[#3498db]/10 p-3 rounded-xl">
                       <ClipboardList className="text-[#3498db]" size={24} />
@@ -654,7 +676,7 @@ export default function Page() {
                   </div>
                 </button>
                 
-                <button onClick={() => setActiveModal('info')} className="bg-[#111] border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
+                <button onClick={() => setActiveModal('info')} className="bg-[#111]/60 backdrop-blur-md border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
                   <div className="flex justify-between items-start mb-4">
                     <div className="bg-[#9b59b6]/10 p-3 rounded-xl">
                       <Info className="text-[#9b59b6]" size={24} />
@@ -666,7 +688,7 @@ export default function Page() {
                   </div>
                 </button>
 
-                <button onClick={() => setActiveModal('chat_admin')} className="bg-[#111] border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
+                <button onClick={() => setActiveModal('chat_admin')} className="bg-[#111]/60 backdrop-blur-md border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
                   <div className="flex justify-between items-start mb-4">
                     <div className="bg-white/10 p-3 rounded-xl">
                       <MessageCircle className="text-white" size={24} />
@@ -725,7 +747,7 @@ export default function Page() {
                       {user.avatarUrl ? (
                         <img src={user.avatarUrl} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-[#d4af37]" />
                       ) : (
-                        <div className="w-24 h-24 rounded-full bg-[#1a1a1a] border-4 border-[#d4af37] flex items-center justify-center">
+                        <div className="w-24 h-24 rounded-full bg-[#1a1a1a]/60 backdrop-blur-sm border-4 border-[#d4af37] flex items-center justify-center">
                           <UserCircle size={48} className="text-[#d4af37]" />
                         </div>
                       )}
@@ -739,7 +761,7 @@ export default function Page() {
 
                   <div>
                     <label className="block text-[11px] text-[#888] font-bold uppercase mb-1">Pilih Posisi Main</label>
-                    <select name="posisi" defaultValue={user.posisi} className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#d4af37]" required>
+                    <select name="posisi" defaultValue={user.posisi} className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#d4af37]" required>
                       <option value="Kiper">Kiper (GK)</option>
                       <option value="Anchor">Anchor (Bawah)</option>
                       <option value="Flank">Flank (Sayap)</option>
@@ -851,7 +873,7 @@ export default function Page() {
                 <p className="text-[12px] text-[#888] text-left mb-5">Berikut adalah jadwal kegiatan klub terdekat:</p>
                 
                 {(settings.jadwalList || []).map((jadwal) => (
-                  <div key={jadwal.id} className={`bg-[#1a1a1a] border-l-4 ${jadwal.type === 'laga' ? 'border-[#e53e3e]' : 'border-[#d4af37]'} p-4 mb-4 rounded-lg text-left shadow-[0_4px_10px_rgba(0,0,0,0.3)]`}>
+                  <div key={jadwal.id} className={`bg-[#1a1a1a]/60 backdrop-blur-sm border-l-4 ${jadwal.type === 'laga' ? 'border-[#e53e3e]' : 'border-[#d4af37]'} p-4 mb-4 rounded-lg text-left shadow-[0_4px_10px_rgba(0,0,0,0.3)]`}>
                     <div className={`inline-block px-3 py-1 ${jadwal.type === 'laga' ? 'bg-[#e53e3e] text-white' : 'bg-[#d4af37] text-[#0a0a0a]'} rounded-full text-[10px] font-bold mb-2 tracking-[1px] uppercase`}>
                       {jadwal.type === 'laga' ? 'Sparing / Laga' : 'Latihan Rutin'}
                     </div>
@@ -884,7 +906,7 @@ export default function Page() {
                   </div>
                 </div>
 
-                <div className={`bg-[#1a1a1a] border rounded-xl p-4 text-left shadow-[0_5px_15px_rgba(0,0,0,0.5)] relative overflow-hidden transition-colors ${user.isPaid ? 'border-[#27ae60]' : 'border-[#e53e3e]'}`}>
+                <div className={`bg-[#1a1a1a]/60 backdrop-blur-sm border rounded-xl p-4 text-left shadow-[0_5px_15px_rgba(0,0,0,0.5)] relative overflow-hidden transition-colors ${user.isPaid ? 'border-[#27ae60]' : 'border-[#e53e3e]'}`}>
                   <Star className={`absolute top-3 right-3 opacity-20 ${user.isPaid ? 'text-[#27ae60]' : 'text-[#e53e3e]'}`} size={24} />
                   
                   <div className="flex justify-between items-center border-b border-dashed border-[#333] py-3">
@@ -1024,7 +1046,7 @@ export default function Page() {
                     </div>
                   ) : (
                     settings.gallery.map((photo) => (
-                      <div key={photo.id} className="relative group aspect-square rounded-lg overflow-hidden bg-[#1a1a1a] border border-[#333]">
+                      <div key={photo.id} className="relative group aspect-square rounded-lg overflow-hidden bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333]">
                         <img src={photo.url} alt="Gallery" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2 text-left">
                           <span className="text-white text-[10px] font-bold truncate">{photo.uploader}</span>
@@ -1047,7 +1069,7 @@ export default function Page() {
               <>
                 <h2 className="text-[#3498db] text-[24px] font-black uppercase tracking-[1px] mt-2 mb-5 border-b border-[#333] pb-2">Taktik & Formasi</h2>
                 
-                <div className="bg-[#1a1a1a] border border-[#333] rounded-lg p-4 mb-5 shadow-lg">
+                <div className="bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] rounded-lg p-4 mb-5 shadow-lg">
                   <div className="w-full aspect-[3/4] bg-[#27ae60]/20 rounded border-2 border-[#27ae60] relative overflow-hidden flex flex-col items-center justify-between p-4 mb-4">
                     {/* Lapangan Lines */}
                     <div className="absolute top-1/2 left-0 w-full h-[2px] bg-[#27ae60]/50 -translate-y-1/2"></div>
@@ -1082,7 +1104,7 @@ export default function Page() {
                 
                 <div className="flex flex-col gap-4 mb-5 text-left">
                   {(settings.announcements || []).map((announcement) => (
-                    <div key={announcement.id} className="bg-[#1a1a1a] border-l-4 p-4 rounded-lg shadow-md" style={{ borderLeftColor: announcement.tagColor }}>
+                    <div key={announcement.id} className="bg-[#1a1a1a]/60 backdrop-blur-sm border-l-4 p-4 rounded-lg shadow-md" style={{ borderLeftColor: announcement.tagColor }}>
                       <p className="text-[10px] font-bold uppercase mb-1" style={{ color: announcement.tagColor }}>{announcement.tag} • {announcement.date}</p>
                       <p className="text-[14px] font-bold text-white mb-2">{announcement.title}</p>
                       <p className="text-[12px] text-[#aaa] leading-relaxed whitespace-pre-line">
@@ -1112,7 +1134,7 @@ export default function Page() {
                 <div className="flex flex-col gap-4 mb-6">
                   <button 
                     onClick={() => window.open('https://chat.whatsapp.com/IPrL7B7BYoF71VC2CSRH1D', '_blank')} 
-                    className="w-full bg-[#1a1a1a] border border-[#25D366]/50 p-4 rounded-xl flex items-center gap-4 group hover:bg-[#25D366]/10 hover:border-[#25D366] transition-all"
+                    className="w-full bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#25D366]/50 p-4 rounded-xl flex items-center gap-4 group hover:bg-[#25D366]/10 hover:border-[#25D366] transition-all"
                   >
                     <div className="bg-[#25D366]/20 p-3 rounded-full text-[#25D366] group-hover:scale-110 transition-transform">
                       <MessageCircle size={24} />
@@ -1125,7 +1147,7 @@ export default function Page() {
 
                   <button 
                     onClick={() => window.open('https://wa.me/6283813356675?text=Halo%20Admin%20@T0M_15,%20saya%20anggota%20Futsar', '_blank')} 
-                    className="w-full bg-[#1a1a1a] border border-[#25D366]/50 p-4 rounded-xl flex items-center gap-4 group hover:bg-[#25D366]/10 hover:border-[#25D366] transition-all"
+                    className="w-full bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#25D366]/50 p-4 rounded-xl flex items-center gap-4 group hover:bg-[#25D366]/10 hover:border-[#25D366] transition-all"
                   >
                     <div className="bg-[#25D366]/20 p-3 rounded-full text-[#25D366] group-hover:scale-110 transition-transform">
                       <MessageCircle size={24} />
@@ -1212,6 +1234,15 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
     alert('Pengaturan nominal kas dan siklus berhasil disimpan!');
   };
 
+  const handleBgSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const bgUrl = fd.get('bgVideoUrl') as string;
+    const bgInside = fd.get('bgInsideUrl') as string;
+    onUpdateSettings({ ...settings, bgVideoUrl: bgUrl, bgInsideUrl: bgInside });
+    alert('Latar belakang berhasil diperbarui!');
+  };
+
   const handleAdminSecuritySubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -1293,7 +1324,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
   };
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-[#0a0a0a] z-[100] flex flex-col overflow-y-auto">
+    <div className="fixed inset-0 w-full h-full bg-black/60 backdrop-blur-xl z-[100] flex flex-col overflow-y-auto">
       {/* Background */}
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(212,175,55,0.08)_0%,transparent_60%)] z-0 pointer-events-none"></div>
       
@@ -1315,25 +1346,25 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
         
         {/* KIRI: Pengaturan Kas */}
         <section className="flex-1 flex flex-col gap-6">
-          <div className="bg-[#111] border border-[#333] p-6 rounded-2xl">
+          <div className="bg-[#111]/60 backdrop-blur-md border border-[#333] p-6 rounded-2xl">
             <h3 className="text-[#d4af37] font-black text-xl mb-1 uppercase tracking-widest">Pengaturan Uang Kas & QRIS</h3>
             <p className="text-xs text-[#888] mb-6">Atur nominal tagihan dan kode QRIS pembayaran.</p>
             
             <form onSubmit={handleKasSubmit} className="flex flex-col gap-4 mb-6 pb-6 border-b border-[#333]">
               <div>
                 <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Siklus Pembayaran Aktif</label>
-                <select name="activePaymentCycle" defaultValue={settings.activePaymentCycle || 'mingguan'} className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#d4af37] transition-colors">
+                <select name="activePaymentCycle" defaultValue={settings.activePaymentCycle || 'mingguan'} className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#d4af37] transition-colors">
                   <option value="mingguan">Mingguan (/ Minggu)</option>
                   <option value="bulanan">Bulanan (/ Bulan)</option>
                 </select>
               </div>
               <div>
                 <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Nominal Mingguan (Rp)</label>
-                <input type="number" name="kasMingguan" defaultValue={settings.kasMingguan} className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#d4af37] transition-colors" required />
+                <input type="number" name="kasMingguan" defaultValue={settings.kasMingguan} className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#d4af37] transition-colors" required />
               </div>
               <div>
                 <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Nominal Bulanan (Rp)</label>
-                <input type="number" name="kasBulanan" defaultValue={settings.kasBulanan} className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#d4af37] transition-colors" required />
+                <input type="number" name="kasBulanan" defaultValue={settings.kasBulanan} className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#d4af37] transition-colors" required />
               </div>
               <button type="submit" className="w-full bg-[#d4af37] text-[#0a0a0a] border-none p-3 rounded-lg text-sm font-bold uppercase cursor-pointer hover:bg-opacity-80 transition-colors mt-2">
                 Simpan Nominal Kas
@@ -1353,7 +1384,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
                 <div className="text-sm text-gray-500 italic mb-2">Belum ada gambar QRIS. Default placeholder akan digunakan.</div>
               )}
               <div className="relative overflow-hidden inline-block w-full">
-                <button type="button" className="w-full bg-[#1a1a1a] text-white border border-[#333] p-3 rounded-lg text-sm font-bold uppercase cursor-pointer hover:bg-white/10 transition-colors">
+                <button type="button" className="w-full bg-[#1a1a1a]/60 backdrop-blur-sm text-white border border-[#333] p-3 rounded-lg text-sm font-bold uppercase cursor-pointer hover:bg-white/10 transition-colors">
                   Pilih Gambar QRIS Baru
                 </button>
                 <input 
@@ -1366,28 +1397,47 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
             </div>
           </div>
 
+          <div className="bg-[#111]/60 backdrop-blur-md border border-[#333] p-6 rounded-2xl">
+            <h3 className="text-[#d4af37] font-black text-xl mb-1 uppercase tracking-widest">Pengaturan Latar Belakang</h3>
+            <p className="text-xs text-[#888] mb-6">Gunakan Link Foto (.jpg/.png) atau Link Video (.mp4) untuk latar belakang.</p>
+            
+            <form onSubmit={handleBgSubmit} className="flex flex-col gap-4">
+              <div>
+                <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Latar Halaman Depan</label>
+                <input type="text" name="bgVideoUrl" defaultValue={settings.bgVideoUrl || '/logo-futsar.mp4'} placeholder="Contoh: https://link-foto.com/gambar.jpg" className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#d4af37] transition-colors" required />
+              </div>
+              <div>
+                <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Latar Halaman Dalam (Dashboard & Menu)</label>
+                <input type="text" name="bgInsideUrl" defaultValue={settings.bgInsideUrl || '/logo-futsar.mp4'} placeholder="Contoh: https://link-foto.com/gambar2.jpg" className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#d4af37] transition-colors" required />
+              </div>
+              <button type="submit" className="w-full bg-[#d4af37] text-[#0a0a0a] border-none p-3 rounded-lg text-sm font-bold uppercase cursor-pointer hover:bg-opacity-80 transition-colors mt-2">
+                Simpan Latar
+              </button>
+            </form>
+          </div>
 
 
-          <div className="bg-[#111] border border-[#333] p-6 rounded-2xl">
+
+          <div className="bg-[#111]/60 backdrop-blur-md border border-[#333] p-6 rounded-2xl">
             <h3 className="text-[#9b59b6] font-black text-xl mb-1 uppercase tracking-widest">Tambah Pengumuman</h3>
             <form onSubmit={handleAddAnnouncement} className="flex flex-col gap-4 mt-5">
               <div className="flex gap-4">
                 <div className="flex-1">
                   <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Tag (Misal: Penting)</label>
-                  <input type="text" name="tag" className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#9b59b6]" required />
+                  <input type="text" name="tag" className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#9b59b6]" required />
                 </div>
                 <div className="flex-[0.5]">
                   <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Warna Tag</label>
-                  <input type="color" name="tagColor" defaultValue="#9b59b6" className="w-full h-[46px] p-1 rounded-lg bg-[#1a1a1a] border border-[#333] cursor-pointer" required />
+                  <input type="color" name="tagColor" defaultValue="#9b59b6" className="w-full h-[46px] p-1 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] cursor-pointer" required />
                 </div>
               </div>
               <div>
                 <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Judul Pengumuman</label>
-                <input type="text" name="title" className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#9b59b6]" required />
+                <input type="text" name="title" className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#9b59b6]" required />
               </div>
               <div>
                 <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Isi Pengumuman</label>
-                <textarea name="content" rows={4} className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#9b59b6] resize-none" required></textarea>
+                <textarea name="content" rows={4} className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#9b59b6] resize-none" required></textarea>
               </div>
               <button type="submit" className="w-full bg-[#9b59b6] text-white border-none p-3 rounded-lg text-sm font-bold uppercase cursor-pointer hover:bg-opacity-80 transition-colors mt-2">
                 Tambah Info
@@ -1396,7 +1446,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
           </div>
 
           {/* UBAH KREDENSIAL ADMIN */}
-          <div className="bg-[#111] border border-[#e53e3e]/40 p-6 rounded-2xl shadow-xl">
+          <div className="bg-[#111]/60 backdrop-blur-md border border-[#e53e3e]/40 p-6 rounded-2xl shadow-xl">
             <h3 className="text-[#e53e3e] font-black text-xl mb-1 uppercase tracking-widest flex items-center gap-2">
               <Lock size={20} /> Ubah Sandi Admin
             </h3>
@@ -1409,7 +1459,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
                   type="text" 
                   name="adminWa" 
                   defaultValue={settings.adminWa || '081244558899'} 
-                  className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#e53e3e] transition-colors" 
+                  className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#e53e3e] transition-colors" 
                   required 
                 />
               </div>
@@ -1419,7 +1469,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
                   type="text" 
                   name="adminPassword" 
                   defaultValue={settings.adminPassword || 'admin'} 
-                  className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#e53e3e] transition-colors" 
+                  className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#e53e3e] transition-colors" 
                   required 
                 />
               </div>
@@ -1433,7 +1483,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
         {/* KANAN: Pendaftar Baru & Pengaturan Jadwal */}
         <section className="flex-[1.5] flex flex-col gap-6">
           
-          <div className="bg-[#111] border border-[#333] p-6 rounded-2xl">
+          <div className="bg-[#111]/60 backdrop-blur-md border border-[#333] p-6 rounded-2xl">
             <h3 className="text-[#3498db] font-black text-xl mb-4 uppercase tracking-widest">Pendaftar Baru ({pendingUsers.length})</h3>
             
             <div className="flex flex-col gap-3">
@@ -1441,7 +1491,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
                 <p className="text-xs text-[#888] italic">Tidak ada pendaftar baru yang menunggu persetujuan.</p>
               ) : (
                 pendingUsers.map((u) => (
-                  <div key={u.wa} className="flex flex-col md:flex-row justify-between items-start md:items-center bg-[#1a1a1a] p-4 rounded-lg border-l-4 border-[#3498db] gap-4">
+                  <div key={u.wa} className="flex flex-col md:flex-row justify-between items-start md:items-center bg-[#1a1a1a]/60 backdrop-blur-sm p-4 rounded-lg border-l-4 border-[#3498db] gap-4">
                     <div className="text-left">
                       <p className="text-sm font-bold text-white mb-1 uppercase tracking-wide">{u.nama} <span className="text-[10px] text-[#3498db] ml-2">({u.id})</span></p>
                       <p className="text-[11px] text-[#aaa] m-0">No WA: {u.wa} • Posisi: {u.posisi}</p>
@@ -1460,7 +1510,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
             </div>
           </div>
 
-          <div className="bg-[#111] border border-[#333] p-6 rounded-2xl">
+          <div className="bg-[#111]/60 backdrop-blur-md border border-[#333] p-6 rounded-2xl">
             <h3 className="text-[#27ae60] font-black text-xl mb-4 uppercase tracking-widest">Manajemen Uang Kas</h3>
             <p className="text-xs text-[#888] mb-5">Konfirmasi pembayaran anggota yang aktif.</p>
             <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#27ae60] pr-2">
@@ -1468,7 +1518,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
                 <p className="text-xs text-[#888] italic">Belum ada anggota yang aktif.</p>
               ) : (
                 activeUsers.map((u) => (
-                  <div key={u.wa} className={`flex flex-col md:flex-row justify-between items-start md:items-center bg-[#1a1a1a] p-4 rounded-lg border-l-4 ${u.isPaid ? 'border-[#27ae60]' : 'border-[#ff4d4d]'} gap-4`}>
+                  <div key={u.wa} className={`flex flex-col md:flex-row justify-between items-start md:items-center bg-[#1a1a1a]/60 backdrop-blur-sm p-4 rounded-lg border-l-4 ${u.isPaid ? 'border-[#27ae60]' : 'border-[#ff4d4d]'} gap-4`}>
                     <div className="text-left">
                       <p className="text-sm font-bold text-white mb-1 uppercase tracking-wide">{u.nama} <span className="text-[10px] text-[#aaa] ml-2">({u.id})</span></p>
                       <p className="text-[11px] text-[#aaa] m-0">No WA: {u.wa} • {settings.activePaymentCycle === 'bulanan' ? 'Bulanan' : 'Mingguan'}</p>
@@ -1487,7 +1537,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
             </div>
           </div>
 
-          <div className="bg-[#111] border border-[#333] p-6 rounded-2xl">
+          <div className="bg-[#111]/60 backdrop-blur-md border border-[#333] p-6 rounded-2xl">
             <h3 className="text-[#9b59b6] font-black text-xl mb-4 uppercase tracking-widest">Manajemen Akun Terdaftar</h3>
             <p className="text-xs text-[#888] mb-5">Daftar semua anggota aktif. Hapus akun jika melanggar.</p>
             <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#9b59b6] pr-2">
@@ -1498,7 +1548,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
                   const now = new Date().getTime();
                   const isOnline = u.lastActive && (now - u.lastActive < 60000); // 1 menit
                   return (
-                    <div key={u.wa} className="flex justify-between items-center bg-[#1a1a1a] p-4 rounded-lg border-l-4 border-[#9b59b6] gap-4">
+                    <div key={u.wa} className="flex justify-between items-center bg-[#1a1a1a]/60 backdrop-blur-sm p-4 rounded-lg border-l-4 border-[#9b59b6] gap-4">
                       <div className="text-left flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <p className="text-sm font-bold text-white uppercase tracking-wide">{u.nama}</p>
@@ -1528,37 +1578,37 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
             </div>
           </div>
 
-          <div className="bg-[#111] border border-[#333] p-6 rounded-2xl">
+          <div className="bg-[#111]/60 backdrop-blur-md border border-[#333] p-6 rounded-2xl">
             <h3 className="text-[#d4af37] font-black text-xl mb-1 uppercase tracking-widest">Tambah Jadwal Baru</h3>
             <form onSubmit={handleAddSchedule} className="flex flex-col gap-4 mt-5">
               <div className="flex gap-4">
                 <div className="flex-1">
                   <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Tipe</label>
-                  <select name="type" className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#d4af37] appearance-none" required>
+                  <select name="type" className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#d4af37] appearance-none" required>
                     <option value="rutin">Latihan Rutin</option>
                     <option value="laga">Sparing / Laga</option>
                   </select>
                 </div>
                 <div className="flex-[2]">
                   <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Judul Jadwal</label>
-                  <input type="text" name="title" className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#d4af37]" placeholder="Contoh: Latihan Rutin Sabtu" required />
+                  <input type="text" name="title" className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#d4af37]" placeholder="Contoh: Latihan Rutin Sabtu" required />
                 </div>
               </div>
               
               <div className="flex gap-4">
                 <div className="flex-1">
                   <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Waktu / Tanggal</label>
-                  <input type="text" name="time" className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#d4af37]" placeholder="Contoh: 19:30 WIB" required />
+                  <input type="text" name="time" className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#d4af37]" placeholder="Contoh: 19:30 WIB" required />
                 </div>
                 <div className="flex-1">
                   <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Lokasi / Lapangan</label>
-                  <input type="text" name="location" className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#d4af37]" placeholder="Contoh: Gor Batung" required />
+                  <input type="text" name="location" className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#d4af37]" placeholder="Contoh: Gor Batung" required />
                 </div>
               </div>
 
               <div>
                 <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Jersey</label>
-                <input type="text" name="jersey" className="w-full p-3 rounded-lg bg-[#1a1a1a] border border-[#333] text-white focus:outline-none focus:border-[#d4af37]" placeholder="Contoh: Home (Gold) / Bebas" required />
+                <input type="text" name="jersey" className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#d4af37]" placeholder="Contoh: Home (Gold) / Bebas" required />
               </div>
               <button type="submit" className="w-full bg-[#d4af37] text-[#0a0a0a] border-none p-3 rounded-lg text-sm font-bold uppercase cursor-pointer hover:bg-opacity-80 transition-colors mt-2">
                 Tambah Jadwal
@@ -1567,7 +1617,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
           </div>
 
           {/* List of Schedules */}
-          <div className="bg-[#111] border border-[#333] p-6 rounded-2xl">
+          <div className="bg-[#111]/60 backdrop-blur-md border border-[#333] p-6 rounded-2xl">
             <h3 className="text-white font-bold text-lg mb-4 uppercase tracking-widest">Jadwal Saat Ini</h3>
             <div className="flex flex-col gap-3">
               {(settings.jadwalList || []).map((j) => (
@@ -1591,11 +1641,11 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
           </div>
 
           {/* List of Announcements */}
-          <div className="bg-[#111] border border-[#333] p-6 rounded-2xl">
+          <div className="bg-[#111]/60 backdrop-blur-md border border-[#333] p-6 rounded-2xl">
             <h3 className="text-white font-bold text-lg mb-4 uppercase tracking-widest">Pengumuman Saat Ini</h3>
             <div className="flex flex-col gap-3">
               {(settings.announcements || []).map((a) => (
-                <div key={a.id} className="flex justify-between items-start bg-[#1a1a1a] p-4 rounded-lg border-l-4" style={{ borderLeftColor: a.tagColor }}>
+                <div key={a.id} className="flex justify-between items-start bg-[#1a1a1a]/60 backdrop-blur-sm p-4 rounded-lg border-l-4" style={{ borderLeftColor: a.tagColor }}>
                   <div className="flex-1 pr-4">
                     <span className="inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase mb-2" style={{ backgroundColor: `${a.tagColor}20`, color: a.tagColor }}>
                       {a.tag} • {a.date}
@@ -1615,12 +1665,12 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
           </div>
 
           {/* List of Gallery Photos (Admin Management) */}
-          <div className="bg-[#111] border border-[#333] p-6 rounded-2xl">
+          <div className="bg-[#111]/60 backdrop-blur-md border border-[#333] p-6 rounded-2xl">
             <h3 className="text-white font-bold text-lg mb-1 uppercase tracking-widest">Manajemen Galeri ({ (settings.gallery || []).length })</h3>
             <p className="text-xs text-[#888] mb-4">Kelola foto kegiatan klub yang telah diunggah.</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {(settings.gallery || []).map((photo) => (
-                <div key={photo.id} className="relative group aspect-square bg-[#1a1a1a] rounded-lg overflow-hidden border border-[#333]">
+                <div key={photo.id} className="relative group aspect-square bg-[#1a1a1a]/60 backdrop-blur-sm rounded-lg overflow-hidden border border-[#333]">
                   <img src={photo.url} alt="Galeri" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-between">
                     <button 
