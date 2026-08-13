@@ -125,6 +125,7 @@ export default function Page() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [selectedGalleryPhoto, setSelectedGalleryPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -1053,14 +1054,14 @@ export default function Page() {
                     </div>
                   ) : (
                     settings.gallery.map((photo) => (
-                      <div key={photo.id} className="relative group aspect-square rounded-lg overflow-hidden bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333]">
+                      <div key={photo.id} className="relative group aspect-square rounded-lg overflow-hidden bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] cursor-pointer" onClick={() => setSelectedGalleryPhoto(photo.url)}>
                         <img src={photo.url} alt="Gallery" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2 text-left">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2 text-left pointer-events-none">
                           <span className="text-white text-[10px] font-bold truncate">{photo.uploader}</span>
                           <span className="text-[#aaa] text-[9px]">{photo.date}</span>
                         </div>
                         {user?.role === 'admin' && (
-                          <button onClick={() => handleDeleteGallery(photo.id)} className="absolute top-2 right-2 bg-black/60 text-[#e53e3e] w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black transition-all">
+                          <button onClick={(e) => { e.stopPropagation(); handleDeleteGallery(photo.id); }} className="absolute top-2 right-2 bg-black/60 text-[#e53e3e] w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black transition-all pointer-events-auto">
                             <Trash2 size={14} />
                           </button>
                         )}
@@ -1189,6 +1190,26 @@ export default function Page() {
       {/* --- ADMIN DASHBOARD --- */}
       {user && user.role === 'admin' && (
         <AdminDashboard settings={settings} onUpdateSettings={updateSettings} onLogout={handleLogout} />
+      )}
+
+      {selectedGalleryPhoto && (
+        <div 
+          className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-md"
+          onClick={() => setSelectedGalleryPhoto(null)}
+        >
+          <button 
+            onClick={() => setSelectedGalleryPhoto(null)}
+            className="absolute top-4 right-4 md:top-8 md:right-8 bg-[#111] border border-[#333] p-3 rounded-full text-white hover:bg-[#222] hover:text-[#d4af37] transition-colors z-[210] shadow-xl"
+          >
+            <X size={24} />
+          </button>
+          <img 
+            src={selectedGalleryPhoto} 
+            alt="Fullscreen Gallery" 
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl relative z-[205]"
+            onClick={(e) => e.stopPropagation()} 
+          />
+        </div>
       )}
     </main>
   );
