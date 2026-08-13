@@ -9,9 +9,21 @@ import {
   Menu, X, MapPin, Instagram, AlertTriangle, LogOut, 
   Calendar, Wallet, ClipboardList, MessageCircle, Clock, Shirt, Star, QrCode,
   Users, Info, FileText, CheckCircle, XCircle, Camera, Edit2, UserCircle, Image as ImageIcon, Trash2, Plus,
-  Lock, ShieldCheck, Bot, Send
+  Lock, ShieldCheck, Bot, Send, MessageSquare, MessagesSquare, CheckCheck, Smile, Radio
 } from 'lucide-react';
 import Image from 'next/image';
+
+type ChatMessage = {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderWa: string;
+  senderPosisi?: string;
+  senderAvatar?: string;
+  role?: 'member' | 'admin';
+  text: string;
+  timestamp: number;
+};
 
 type User = {
   nama: string;
@@ -116,7 +128,7 @@ const defaultSettings: AppSettings = {
 
 export default function Page() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeModal, setActiveModal] = useState<'daftar' | 'masuk' | 'jadwal' | 'kas' | 'admin_login' | 'rekap_kas' | 'taktik' | 'info' | 'chat_admin' | 'profile' | 'gallery' | 'ai_bot' | null>(null);
+  const [activeModal, setActiveModal] = useState<'daftar' | 'masuk' | 'jadwal' | 'kas' | 'admin_login' | 'rekap_kas' | 'taktik' | 'info' | 'chat_admin' | 'profile' | 'gallery' | 'ai_bot' | 'community_chat' | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [allUsers, setAllUsers] = useState<User[]>([]);
@@ -126,7 +138,23 @@ export default function Page() {
   const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [selectedGalleryPhoto, setSelectedGalleryPhoto] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState<number>(0);
+
+  useEffect(() => {
+    setCurrentTime(Date.now());
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 15000);
+    return () => clearInterval(interval);
+  }, []);
   
+  // Community Chat State
+  const [communityMessages, setCommunityMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [activeChatTab, setActiveChatTab] = useState<'chat' | 'members'>('chat');
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const communityChatEndRef = useRef<HTMLDivElement>(null);
+
   const [aiMessages, setAiMessages] = useState<{role: 'user' | 'ai', text: string}[]>([
     { role: 'ai', text: 'Halo! Saya Asisten AI Futsar. Ada yang bisa saya bantu tentang info klub, taktik futsal, atau jadwal?' }
   ]);
@@ -139,6 +167,12 @@ export default function Page() {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [aiMessages, isAiTyping, activeModal]);
+
+  useEffect(() => {
+    if (activeModal === 'community_chat' && activeChatTab === 'chat') {
+      communityChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [communityMessages, activeModal, activeChatTab]);
   
   const handleSendAiMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,6 +198,41 @@ export default function Page() {
     }
   };
 
+  const handleSendCommunityMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim() || !user) return;
+
+    const text = chatInput.trim();
+    setChatInput('');
+    const newMsg: Omit<ChatMessage, 'id'> = {
+      senderId: user.id || user.wa,
+      senderName: user.nama,
+      senderWa: user.wa,
+      senderPosisi: user.posisi || 'Member',
+      senderAvatar: user.avatarUrl || '',
+      role: user.role || 'member',
+      text,
+      timestamp: Date.now()
+    };
+
+    try {
+      const msgId = `${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+      await setDoc(doc(db, "community_messages", msgId), newMsg);
+    } catch (err) {
+      console.error('Error sending community message:', err);
+    }
+  };
+
+  const handleDeleteCommunityMessage = async (msgId: string) => {
+    if (confirm('Hapus pesan ini dari ruang chat?')) {
+      try {
+        await deleteDoc(doc(db, "community_messages", msgId));
+      } catch (err) {
+        console.error('Error deleting community message:', err);
+      }
+    }
+  };
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -180,10 +249,35 @@ export default function Page() {
       };
       
       updatePresence();
-      const interval = setInterval(updatePresence, 30000); // 30 seconds
+      const interval = setInterval(updatePresence, 20000); // 20 seconds
       return () => clearInterval(interval);
     }
   }, [user?.wa]);
+
+  // Real-time listener for all users (Online Presence & Member Directory)
+  useEffect(() => {
+    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+      const users: User[] = [];
+      snapshot.forEach((docSnap) => {
+        users.push(docSnap.data() as User);
+      });
+      setAllUsers(users);
+    });
+    return () => unsubUsers();
+  }, []);
+
+  // Real-time listener for Community Chat messages
+  useEffect(() => {
+    const unsubChat = onSnapshot(collection(db, "community_messages"), (snapshot) => {
+      const msgs: ChatMessage[] = [];
+      snapshot.forEach((docSnap) => {
+        msgs.push({ id: docSnap.id, ...(docSnap.data() as Omit<ChatMessage, 'id'>) });
+      });
+      msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      setCommunityMessages(msgs);
+    });
+    return () => unsubChat();
+  }, []);
 
   useEffect(() => {
     const unsubSettings = onSnapshot(doc(db, "settings", "global"), (docSnap) => {
@@ -232,21 +326,6 @@ export default function Page() {
       if (unsubUser) unsubUser();
     };
   }, []);
-
-  const fetchAllUsers = async () => {
-    const querySnapshot = await getDocs(collection(db, "users"));
-    const users: User[] = [];
-    querySnapshot.forEach((docSnap) => {
-      users.push(docSnap.data() as User);
-    });
-    setAllUsers(users);
-  };
-
-  useEffect(() => {
-    if (activeModal === 'rekap_kas') {
-      fetchAllUsers();
-    }
-  }, [activeModal]);
 
   const updateSettings = async (newSettings: AppSettings) => {
     setSettings(newSettings);
@@ -587,14 +666,42 @@ export default function Page() {
           {/* Header / Nav (Immersive UI Style) */}
           <nav className="z-20 px-4 md:px-8 py-4 flex justify-between items-center bg-black/40 backdrop-blur-md border-b border-[#d4af37]/20 relative">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#d4af37] rounded-lg flex items-center justify-center">
-                 <Shirt size={24} className="text-black" />
-              </div>
-              <span className="font-black tracking-[4px] text-[#d4af37] text-xl md:text-2xl">FUTSAR</span>
+              {/* Message icon with live online indicator replacing the old shirt icon */}
+              <button 
+                onClick={() => setActiveModal('community_chat')}
+                className="relative w-10 h-10 bg-gradient-to-br from-[#ffe89c] via-[#d4af37] to-[#b8911f] rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.35)] hover:scale-105 active:scale-95 transition-all group cursor-pointer border border-[#ffe89c]/40"
+                title="Buka Ruang Chat Komunitas & Status Online"
+              >
+                <MessageSquare size={22} className="text-[#0a0a0a] group-hover:scale-110 transition-transform" />
+                {/* Live Online Pulsing Indicator */}
+                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-black"></span>
+                </span>
+              </button>
+
+              <button 
+                onClick={() => setActiveModal('community_chat')}
+                className="text-left flex flex-col group cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-black tracking-[4px] text-[#d4af37] text-xl md:text-2xl group-hover:brightness-125 transition-all">FUTSAR</span>
+                  <span className="inline-flex items-center gap-1 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    {allUsers.filter(u => u.lastActive && currentTime > 0 && (currentTime - u.lastActive < 90000)).length} Online
+                  </span>
+                </div>
+                <span className="text-[10px] text-[#888] group-hover:text-[#d4af37] transition-colors font-medium -mt-0.5">
+                  Ruang Chat & Anggota
+                </span>
+              </button>
             </div>
             
             <div className="hidden md:flex gap-8 text-xs font-bold uppercase tracking-widest text-[#aaa]">
               <button className="text-[#d4af37] border-b border-[#d4af37] pb-1 cursor-default">Dashboard</button>
+              <button onClick={() => setActiveModal('community_chat')} className="hover:text-[#d4af37] text-[#d4af37]/80 transition-colors flex items-center gap-1.5">
+                <MessageSquare size={13} /> Chat Tim
+              </button>
               <button onClick={() => setActiveModal('jadwal')} className="hover:text-white transition-colors">Jadwal</button>
               <button onClick={() => setActiveModal('kas')} className="hover:text-white transition-colors">Kas</button>
               <button onClick={() => setActiveModal('gallery')} className="hover:text-white transition-colors">Galeri</button>
@@ -658,6 +765,22 @@ export default function Page() {
 
               {/* Grid Menu */}
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 flex-1">
+                <button onClick={() => setActiveModal('community_chat')} className="bg-gradient-to-br from-[#1b170c]/80 to-[#111]/80 backdrop-blur-md border border-[#d4af37]/40 rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-all text-left active:scale-[0.98] relative overflow-hidden shadow-lg">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="bg-[#d4af37]/20 p-3 rounded-xl border border-[#d4af37]/30 text-[#d4af37] group-hover:scale-110 transition-transform">
+                      <MessagesSquare size={24} />
+                    </div>
+                    <span className="inline-flex items-center gap-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      {allUsers.filter(u => u.lastActive && currentTime > 0 && (currentTime - u.lastActive < 90000)).length} Online
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold mb-1 text-[#d4af37] group-hover:brightness-125 transition-colors">Ruang Chat</h3>
+                    <p className="text-xs text-gray-400">Obrolan & status anggota</p>
+                  </div>
+                </button>
+
                 <button onClick={() => setActiveModal('jadwal')} className="bg-[#111]/60 backdrop-blur-md border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
                   <div className="flex justify-between items-start mb-4">
                     <div className="bg-[#d4af37]/10 p-3 rounded-xl">
@@ -788,11 +911,21 @@ export default function Page() {
 
       {/* --- MODALS --- */}
       {activeModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[500] flex justify-center items-center p-4 animate-in fade-in duration-200">
-          <div className="bg-[#111] w-full max-w-[380px] max-h-[85vh] rounded-[15px] border border-[#d4af37] p-[25px] relative overflow-y-auto shadow-[0_10px_40px_rgba(0,0,0,0.8)] animate-in slide-in-from-bottom-10 duration-300 scrollbar-thin scrollbar-thumb-[#d4af37]">
-            <button onClick={() => setActiveModal(null)} className="absolute top-[15px] right-[20px] text-[#d4af37] hover:opacity-80">
-              <X size={24} />
-            </button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[500] flex justify-center items-center p-3 sm:p-4 animate-in fade-in duration-200">
+          <div className={`bg-[#111] w-full ${
+            activeModal === 'community_chat' 
+              ? 'max-w-[500px] h-[90vh] sm:h-[650px] flex flex-col p-0 overflow-hidden' 
+              : activeModal === 'gallery' 
+              ? 'max-w-[500px] p-[25px]' 
+              : activeModal === 'ai_bot'
+              ? 'max-w-[420px] p-[25px]'
+              : 'max-w-[380px] p-[25px]'
+          } max-h-[92vh] rounded-[20px] border border-[#d4af37] relative shadow-[0_10px_40px_rgba(0,0,0,0.85)] animate-in slide-in-from-bottom-6 duration-300 ${activeModal !== 'community_chat' ? 'overflow-y-auto scrollbar-thin scrollbar-thumb-[#d4af37]' : ''}`}>
+            {activeModal !== 'community_chat' && (
+              <button onClick={() => setActiveModal(null)} className="absolute top-[15px] right-[20px] text-[#d4af37] hover:opacity-80 z-20">
+                <X size={24} />
+              </button>
+            )}
 
             {/* PROFILE MODAL */}
             {activeModal === 'profile' && user && (
@@ -1281,6 +1414,299 @@ export default function Page() {
                 </button>
               </>
             )}
+
+            {/* COMMUNITY CHAT & ONLINE PRESENCE MODAL */}
+            {activeModal === 'community_chat' && (
+              <div className="flex flex-col h-full w-full bg-[#0d0d0d] text-white">
+                {/* Header */}
+                <div className="px-4 py-3 bg-[#141414] border-b border-[#292929] flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#ffe89c] via-[#d4af37] to-[#b8911f] flex items-center justify-center text-black shadow-md">
+                      <MessagesSquare size={18} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-[15px] font-black text-white tracking-wider uppercase leading-tight">Ruang Chat Futsar</h2>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        <span className="flex h-2 w-2 relative">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span className="font-semibold text-emerald-400">
+                          {allUsers.filter(u => u.lastActive && currentTime > 0 && (currentTime - u.lastActive < 90000)).length} Anggota Online
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={() => setActiveModal(null)} 
+                    className="w-8 h-8 rounded-lg bg-[#222] hover:bg-[#333] text-[#aaa] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex border-b border-[#222] bg-[#111] px-4 pt-1 gap-2 shrink-0">
+                  <button
+                    onClick={() => setActiveChatTab('chat')}
+                    className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 border-b-2 transition-colors cursor-pointer ${
+                      activeChatTab === 'chat'
+                        ? 'border-[#d4af37] text-[#d4af37]'
+                        : 'border-transparent text-[#777] hover:text-[#bbb]'
+                    }`}
+                  >
+                    <MessageSquare size={14} /> Obrolan
+                    {communityMessages.length > 0 && (
+                      <span className="bg-[#222] text-[#d4af37] text-[10px] px-1.5 py-0.2 rounded-full font-mono">
+                        {communityMessages.length}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setActiveChatTab('members')}
+                    className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 border-b-2 transition-colors cursor-pointer ${
+                      activeChatTab === 'members'
+                        ? 'border-[#d4af37] text-[#d4af37]'
+                        : 'border-transparent text-[#777] hover:text-[#bbb]'
+                    }`}
+                  >
+                    <Users size={14} /> Anggota ({allUsers.filter(u => !u.status || u.status === 'active').length})
+                  </button>
+                </div>
+
+                {/* TAB 1: OBROLAN CHAT */}
+                {activeChatTab === 'chat' && (
+                  <div className="flex flex-col flex-1 min-h-0">
+                    {/* Horizontal Online Members Quick Bar */}
+                    <div className="px-3 py-2 bg-[#121212] border-b border-[#222] flex items-center gap-2 overflow-x-auto scrollbar-none shrink-0">
+                      <span className="text-[10px] uppercase font-bold text-[#888] tracking-wider shrink-0 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        Online:
+                      </span>
+                      {allUsers.filter(u => u.lastActive && currentTime > 0 && (currentTime - u.lastActive < 90000)).length === 0 ? (
+                        <span className="text-[11px] text-[#666] italic">Semua sedang offline</span>
+                      ) : (
+                        allUsers
+                          .filter(u => u.lastActive && currentTime > 0 && (currentTime - u.lastActive < 90000))
+                          .map((ou) => (
+                            <button
+                              key={ou.wa}
+                              onClick={() => setChatInput(prev => `${prev ? prev + ' ' : ''}@${ou.nama} `)}
+                              className="flex items-center gap-1.5 bg-[#1c1c1c] hover:bg-[#282828] border border-emerald-500/40 rounded-full pl-1 pr-2.5 py-0.5 text-[11px] text-white shrink-0 transition-colors group cursor-pointer"
+                              title={`Tag @${ou.nama}`}
+                            >
+                              <div className="relative">
+                                {ou.avatarUrl ? (
+                                  <img src={ou.avatarUrl} alt={ou.nama} className="w-5 h-5 rounded-full object-cover" />
+                                ) : (
+                                  <div className="w-5 h-5 rounded-full bg-[#333] flex items-center justify-center text-[9px] font-bold text-[#d4af37]">
+                                    {ou.nama.charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-black"></span>
+                              </div>
+                              <span className="font-semibold text-[10px] text-white group-hover:text-[#d4af37] truncate max-w-[80px]">
+                                {ou.nama}
+                              </span>
+                            </button>
+                          ))
+                      )}
+                    </div>
+
+                    {/* Messages Container */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-[#d4af37]/30">
+                      {communityMessages.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-center p-6 text-[#777]">
+                          <div className="w-14 h-14 rounded-2xl bg-[#d4af37]/10 flex items-center justify-center text-[#d4af37] mb-3">
+                            <MessagesSquare size={28} />
+                          </div>
+                          <p className="text-sm font-bold text-white mb-1">Ruang Chat Masih Kosong</p>
+                          <p className="text-xs text-[#888] max-w-[240px]">
+                            Mulai obrolan seru, koordinasi pertandingan, atau sapa anggota Futsar lainnya!
+                          </p>
+                        </div>
+                      ) : (
+                        communityMessages.map((msg) => {
+                          const isOwn = user ? (msg.senderWa === user.wa || (user.role === 'admin' && msg.senderWa === 'ADMIN')) : false;
+                          const isSenderAdmin = msg.role === 'admin' || msg.senderWa === 'ADMIN';
+                          const msgDate = new Date(msg.timestamp);
+                          const timeStr = isNaN(msgDate.getTime()) 
+                            ? '' 
+                            : msgDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+                          return (
+                            <div key={msg.id} className={`flex gap-2.5 ${isOwn ? 'justify-end' : 'justify-start'} group items-end`}>
+                              {!isOwn && (
+                                <div className="w-7 h-7 rounded-full shrink-0 overflow-hidden bg-[#222] border border-[#444] flex items-center justify-center text-[10px] font-bold text-[#d4af37]">
+                                  {msg.senderAvatar ? (
+                                    <img src={msg.senderAvatar} alt={msg.senderName} className="w-full h-full object-cover" />
+                                  ) : (
+                                    msg.senderName.charAt(0).toUpperCase()
+                                  )}
+                                </div>
+                              )}
+
+                              <div className={`max-w-[78%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                                <div className="flex items-center gap-1.5 mb-1 px-1">
+                                  <span className={`text-[11px] font-bold ${isOwn ? 'text-[#d4af37]' : isSenderAdmin ? 'text-[#e53e3e]' : 'text-[#bbb]'}`}>
+                                    {msg.senderName}
+                                  </span>
+                                  {isSenderAdmin ? (
+                                    <span className="bg-[#e53e3e]/20 text-[#e53e3e] border border-[#e53e3e]/40 text-[8px] font-black px-1.5 py-0.2 rounded uppercase">
+                                      Admin
+                                    </span>
+                                  ) : (
+                                    msg.senderPosisi && (
+                                      <span className="bg-[#262626] text-[#aaa] text-[8px] font-semibold px-1.5 py-0.2 rounded uppercase">
+                                        {msg.senderPosisi}
+                                      </span>
+                                    )
+                                  )}
+                                  <span className="text-[9px] text-[#666]">{timeStr}</span>
+                                </div>
+
+                                <div className="relative group/msg flex items-center gap-1.5">
+                                  {(isOwn || user?.role === 'admin') && (
+                                    <button 
+                                      onClick={() => handleDeleteCommunityMessage(msg.id)}
+                                      className={`opacity-0 group-hover/msg:opacity-100 p-1 text-[#666] hover:text-[#e53e3e] transition-opacity ${isOwn ? 'order-first' : 'order-last'}`}
+                                      title="Hapus pesan"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  )}
+                                  <div className={`p-3 rounded-2xl text-[13px] leading-relaxed break-words whitespace-pre-wrap text-left ${
+                                    isOwn 
+                                      ? 'bg-gradient-to-br from-[#d4af37] to-[#b8911f] text-[#0a0a0a] font-semibold rounded-br-none shadow-md' 
+                                      : isSenderAdmin
+                                      ? 'bg-[#201212] border border-[#e53e3e]/40 text-white rounded-bl-none shadow-md'
+                                      : 'bg-[#1c1c1c] border border-[#2e2e2e] text-white rounded-bl-none shadow-md'
+                                  }`}>
+                                    {msg.text}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {isOwn && (
+                                <div className="w-7 h-7 rounded-full shrink-0 overflow-hidden bg-[#d4af37] border border-[#d4af37] flex items-center justify-center text-[10px] font-bold text-black">
+                                  {user?.avatarUrl ? (
+                                    <img src={user.avatarUrl} alt={user.nama} className="w-full h-full object-cover" />
+                                  ) : (
+                                    (user?.nama || 'U').charAt(0).toUpperCase()
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                      <div ref={communityChatEndRef} />
+                    </div>
+
+                    {/* Chat Input */}
+                    <form onSubmit={handleSendCommunityMessage} className="p-3 bg-[#111] border-t border-[#242424] flex items-center gap-2 shrink-0">
+                      <input 
+                        type="text" 
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        placeholder={user ? "Ketik pesan ke semua anggota..." : "Masuk terlebih dahulu untuk mengirim pesan"}
+                        disabled={!user}
+                        className="flex-1 bg-[#1a1a1a] border border-[#333] text-white text-xs px-3.5 py-3 rounded-xl focus:outline-none focus:border-[#d4af37] transition-colors disabled:opacity-50"
+                      />
+                      <button 
+                        type="submit" 
+                        disabled={!chatInput.trim() || !user}
+                        className="bg-[#d4af37] text-black disabled:opacity-40 disabled:cursor-not-allowed hover:bg-opacity-90 font-bold p-3 rounded-xl transition-all active:scale-95 flex items-center justify-center shrink-0 shadow-md"
+                      >
+                        <Send size={16} />
+                      </button>
+                    </form>
+                  </div>
+                )}
+
+                {/* TAB 2: DAFTAR ANGGOTA & STATUS ONLINE */}
+                {activeChatTab === 'members' && (
+                  <div className="flex-1 flex flex-col min-h-0 p-4">
+                    <div className="mb-3 shrink-0">
+                      <input 
+                        type="text"
+                        value={memberSearchQuery}
+                        onChange={(e) => setMemberSearchQuery(e.target.value)}
+                        placeholder="Cari nama atau posisi anggota..."
+                        className="w-full bg-[#1a1a1a] border border-[#333] text-white text-xs px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-[#d4af37]"
+                      />
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 scrollbar-thin scrollbar-thumb-[#d4af37]/30">
+                      {allUsers
+                        .filter(u => (!u.status || u.status === 'active') && u.role !== 'admin')
+                        .filter(u => u.nama.toLowerCase().includes(memberSearchQuery.toLowerCase()) || (u.posisi || '').toLowerCase().includes(memberSearchQuery.toLowerCase()))
+                        .sort((a, b) => {
+                          const aOnline = a.lastActive && currentTime > 0 && (currentTime - a.lastActive < 90000) ? 1 : 0;
+                          const bOnline = b.lastActive && currentTime > 0 && (currentTime - b.lastActive < 90000) ? 1 : 0;
+                          return bOnline - aOnline;
+                        })
+                        .map((u) => {
+                          const isOnline = u.lastActive && currentTime > 0 && (currentTime - u.lastActive < 90000);
+                          return (
+                            <div key={u.wa} className="flex items-center justify-between p-3 rounded-xl bg-[#171717] border border-[#262626] hover:border-[#3a3a3a] transition-all">
+                              <div className="flex items-center gap-3">
+                                <div className="relative">
+                                  {u.avatarUrl ? (
+                                    <img src={u.avatarUrl} alt={u.nama} className="w-10 h-10 rounded-full object-cover border border-[#444]" />
+                                  ) : (
+                                    <div className="w-10 h-10 rounded-full bg-[#222] border border-[#444] flex items-center justify-center font-bold text-[#d4af37] text-sm">
+                                      {u.nama.charAt(0).toUpperCase()}
+                                    </div>
+                                  )}
+                                  <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-black ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`}></span>
+                                </div>
+                                <div className="text-left">
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-xs font-bold text-white">{u.nama}</p>
+                                    <span className="text-[9px] bg-[#2a2a2a] text-[#aaa] px-1.5 py-0.2 rounded font-medium">{u.posisi || 'Member'}</span>
+                                  </div>
+                                  <p className="text-[10px] text-[#777] mt-0.5">
+                                    {isOnline ? (
+                                      <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Online sekarang
+                                      </span>
+                                    ) : (
+                                      <span>Offline</span>
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5">
+                                <button 
+                                  onClick={() => {
+                                    setActiveChatTab('chat');
+                                    setChatInput(`@${u.nama} `);
+                                  }}
+                                  className="px-2.5 py-1.5 bg-[#d4af37]/15 hover:bg-[#d4af37] text-[#d4af37] hover:text-black rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
+                                >
+                                  Tag Chat
+                                </button>
+                                <button 
+                                  onClick={() => window.open(`https://wa.me/${u.wa.replace(/^0/, '62')}`, '_blank')}
+                                  className="p-1.5 bg-[#25D366]/15 hover:bg-[#25D366] text-[#25D366] hover:text-white rounded-lg transition-colors cursor-pointer"
+                                  title="WhatsApp"
+                                >
+                                  <MessageCircle size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1298,7 +1724,7 @@ export default function Page() {
 
       {/* --- ADMIN DASHBOARD --- */}
       {user && user.role === 'admin' && (
-        <AdminDashboard settings={settings} onUpdateSettings={updateSettings} onLogout={handleLogout} />
+        <AdminDashboard settings={settings} onUpdateSettings={updateSettings} onLogout={handleLogout} onOpenChat={() => setActiveModal('community_chat')} />
       )}
 
       {selectedGalleryPhoto && (
@@ -1324,7 +1750,7 @@ export default function Page() {
   );
 }
 
-function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: AppSettings, onUpdateSettings: (s: AppSettings) => void, onLogout: () => void }) {
+function AdminDashboard({ settings, onUpdateSettings, onLogout, onOpenChat }: { settings: AppSettings, onUpdateSettings: (s: AppSettings) => void, onLogout: () => void, onOpenChat?: () => void }) {
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
 
@@ -1473,6 +1899,15 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout }: { settings: Ap
           <span className="font-black tracking-[4px] text-white text-xl md:text-2xl">ADMIN PANEL</span>
         </div>
         <div className="flex items-center gap-3">
+          {onOpenChat && (
+            <button 
+              onClick={onOpenChat}
+              className="px-3.5 py-2 bg-[#d4af37]/15 text-[#d4af37] border border-[#d4af37]/40 rounded-lg text-xs font-bold uppercase transition-all hover:bg-[#d4af37] hover:text-black flex items-center gap-2"
+            >
+              <MessagesSquare size={16} />
+              <span>Ruang Chat</span>
+            </button>
+          )}
           <button onClick={onLogout} className="px-4 py-2 bg-[#1a1a1a] text-[#e53e3e] border border-[#e53e3e] rounded-lg text-xs font-bold uppercase transition-colors hover:bg-[#e53e3e] hover:text-white">
             Keluar Admin
           </button>

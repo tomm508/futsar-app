@@ -1,22 +1,22 @@
-'use client'
-import { useState, useEffect } from 'react';
- 
+'use client';
+
 export default function GlobalError({
-  error,
   reset,
 }: {
   error: Error & { digest?: string }
   reset: () => void
 }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
   return (
     <html>
-      <body>
-        <h2>Something went wrong!</h2>
-        <button onClick={() => reset()}>Try again</button>
+      <body className="bg-black text-white p-8 font-sans">
+        <h2 className="text-xl font-bold mb-4">Terjadi kesalahan sistem</h2>
+        <button 
+          onClick={() => reset()}
+          className="px-4 py-2 bg-[#d4af37] text-black font-bold rounded-lg"
+        >
+          Coba Lagi
+        </button>
       </body>
     </html>
-  )
+  );
 }
