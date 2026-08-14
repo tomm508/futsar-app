@@ -1917,7 +1917,7 @@ export default function Page() {
                               className="flex items-center gap-1.5 bg-[#1c1c1c] hover:bg-[#282828] border border-emerald-500/40 rounded-full pl-1 pr-2.5 py-0.5 text-[11px] text-white shrink-0 transition-colors group cursor-pointer"
                               title={`Lihat profil ${ou.nama}`}
                             >
-                              <PlayerAvatar user={ou} size="xs" showOnlineBadge={true} />
+                              <PlayerAvatar user={ou} size="xs" showOnline={true} />
                               <span className="font-semibold text-[10px] text-white group-hover:text-[#d4af37] truncate max-w-[80px]">
                                 {ou.nama}
                               </span>
@@ -2105,7 +2105,7 @@ export default function Page() {
                               title="Klik untuk lihat profil lengkap"
                             >
                               <div className="flex items-center gap-3 text-left">
-                                <PlayerAvatar user={u} size="md" showOnlineBadge={true} />
+                                <PlayerAvatar user={u} size="md" showOnline={true} />
                                 <div className="text-left">
                                   <div className="flex items-center gap-2">
                                     <p className="text-xs font-bold text-white group-hover:text-[#d4af37] transition-colors">{u.nama}</p>
@@ -2219,7 +2219,7 @@ export default function Page() {
                 <PlayerAvatar 
                   user={selectedMember} 
                   size="xl" 
-                  showOnlineBadge={true}
+                  showOnline={true}
                 />
               </div>
 
