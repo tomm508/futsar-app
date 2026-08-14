@@ -9,9 +9,32 @@ import {
   Menu, X, MapPin, Instagram, AlertTriangle, LogOut, 
   Calendar, Wallet, ClipboardList, MessageCircle, Clock, Shirt, Star, QrCode,
   Users, Info, FileText, CheckCircle, XCircle, Camera, Edit2, UserCircle, Image as ImageIcon, Trash2, Plus,
-  Lock, ShieldCheck, Bot, Send, MessageSquare, MessagesSquare, CheckCheck, Smile, Radio
+  Lock, ShieldCheck, Bot, Send, MessageSquare, MessagesSquare, CheckCheck, Smile, Radio,
+  Download, Palette, Sparkles, ExternalLink, Eye, Award, Shield, Activity, Settings,
+  Flame, Zap, Crown
 } from 'lucide-react';
 import Image from 'next/image';
+
+const PROFILE_THEMES = [
+  { id: 'gold', name: 'Gold Champion', color: '#d4af37', border: 'border-[#d4af37]', text: 'text-[#d4af37]', bg: 'bg-[#d4af37]', glow: 'rgba(212,175,55,0.4)' },
+  { id: 'crimson', name: 'Crimson Red', color: '#e53e3e', border: 'border-[#e53e3e]', text: 'text-[#e53e3e]', bg: 'bg-[#e53e3e]', glow: 'rgba(229,62,62,0.4)' },
+  { id: 'blue', name: 'Electric Blue', color: '#3182ce', border: 'border-[#3182ce]', text: 'text-[#3182ce]', bg: 'bg-[#3182ce]', glow: 'rgba(49,130,206,0.4)' },
+  { id: 'emerald', name: 'Emerald Pitch', color: '#38a169', border: 'border-[#38a169]', text: 'text-[#38a169]', bg: 'bg-[#38a169]', glow: 'rgba(56,161,105,0.4)' },
+  { id: 'purple', name: 'Amethyst Violet', color: '#805ad5', border: 'border-[#805ad5]', text: 'text-[#805ad5]', bg: 'bg-[#805ad5]', glow: 'rgba(128,90,213,0.4)' },
+  { id: 'orange', name: 'Sunset Orange', color: '#dd6b20', border: 'border-[#dd6b20]', text: 'text-[#dd6b20]', bg: 'bg-[#dd6b20]', glow: 'rgba(221,107,32,0.4)' },
+  { id: 'cyan', name: 'Cyber Cyan', color: '#00b4d8', border: 'border-[#00b4d8]', text: 'text-[#00b4d8]', bg: 'bg-[#00b4d8]', glow: 'rgba(0,180,216,0.4)' },
+];
+
+const AVATAR_BORDERS = [
+  { id: 'classic', name: 'Solid Klasik', icon: Shield, desc: 'Ring solid tegas selaras warna tema' },
+  { id: 'glow', name: 'Neon Aura', icon: Sparkles, desc: 'Pendaran aura neon bercahaya' },
+  { id: 'champion', name: 'Gold Champion', icon: Award, desc: 'Ring ganda mahkota emas sang juara' },
+  { id: 'fire', name: 'Inferno Flame', icon: Flame, desc: 'Gradasi bara api membara' },
+  { id: 'lightning', name: 'Electric Storm', icon: Zap, desc: 'Kilatan petir cyber berenergi' },
+  { id: 'cyber', name: 'Tactical Matrix', icon: Radio, desc: 'Garis putus-putus tactical futuristik' },
+  { id: 'captain', name: 'Captain Crest', icon: ShieldCheck, desc: 'Lencana ban kapten bertabur bintang' },
+  { id: 'prism', name: 'Holo Spectrum', icon: Palette, desc: 'Spektrum pelangi hologram mengkilap' },
+];
 
 type ChatMessage = {
   id: string;
@@ -20,6 +43,8 @@ type ChatMessage = {
   senderWa: string;
   senderPosisi?: string;
   senderAvatar?: string;
+  senderThemeColor?: string;
+  senderAvatarBorder?: string;
   role?: 'member' | 'admin';
   text: string;
   timestamp: number;
@@ -38,7 +63,181 @@ type User = {
   role?: 'member' | 'admin';
   status?: 'pending' | 'active' | 'rejected';
   avatarUrl?: string;
+  jerseyNumber?: string;
+  bio?: string;
+  themeColor?: string;
+  avatarBorder?: string;
+  joinedDate?: string;
 };
+
+function PlayerAvatar({
+  user,
+  size = 'md',
+  className = '',
+  showOnline = false,
+  currentTime = 0,
+  onClick,
+  title,
+  customThemeColor,
+  customBorder,
+  customAvatarUrl,
+  customNama
+}: {
+  user?: Partial<User> | null;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  className?: string;
+  showOnline?: boolean;
+  currentTime?: number;
+  onClick?: () => void;
+  title?: string;
+  customThemeColor?: string;
+  customBorder?: string;
+  customAvatarUrl?: string;
+  customNama?: string;
+}) {
+  const theme = customThemeColor || user?.themeColor || '#d4af37';
+  const borderStyle = customBorder || user?.avatarBorder || 'classic';
+  const avatarUrl = customAvatarUrl !== undefined ? customAvatarUrl : user?.avatarUrl;
+  const nama = customNama || user?.nama || 'U';
+  const isOnline = showOnline && user?.lastActive && currentTime > 0 && (currentTime - user.lastActive < 90000);
+
+  const sizeStyles = {
+    xs: { wrapper: 'w-6 h-6', inner: 'w-5 h-5 text-[10px]' },
+    sm: { wrapper: 'w-8 h-8', inner: 'w-7 h-7 text-xs' },
+    md: { wrapper: 'w-10 h-10', inner: 'w-9 h-9 text-sm' },
+    lg: { wrapper: 'w-16 h-16', inner: 'w-[58px] h-[58px] text-xl' },
+    xl: { wrapper: 'w-20 h-20', inner: 'w-[72px] h-[72px] text-2xl' },
+    '2xl': { wrapper: 'w-24 h-24', inner: 'w-[86px] h-[86px] text-3xl' }
+  }[size] || { wrapper: 'w-10 h-10', inner: 'w-9 h-9 text-sm' };
+
+  const isSmall = size === 'xs' || size === 'sm';
+
+  const getFrameClasses = () => {
+    switch (borderStyle) {
+      case 'glow':
+        return 'p-[2px] rounded-full border-2 transition-all duration-300';
+      case 'champion':
+        return 'p-[2.5px] rounded-full bg-gradient-to-tr from-[#ffe066] via-[#d4af37] to-[#996515] shadow-[0_0_12px_rgba(212,175,55,0.5)] ring-1 ring-[#ffe066]/40';
+      case 'fire':
+        return 'p-[2.5px] rounded-full bg-gradient-to-tr from-amber-500 via-red-500 to-rose-600 shadow-[0_0_12px_rgba(239,68,68,0.5)]';
+      case 'lightning':
+        return 'p-[2.5px] rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 shadow-[0_0_12px_rgba(6,182,212,0.6)] animate-pulse';
+      case 'cyber':
+        return 'p-[2px] rounded-full border-2 border-dashed border-cyan-400/80 shadow-[0_0_8px_rgba(6,182,212,0.3)]';
+      case 'captain':
+        return 'p-[2.5px] rounded-full border-2 border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.4)]';
+      case 'prism':
+        return 'p-[2.5px] rounded-full bg-gradient-to-tr from-purple-500 via-pink-500 via-yellow-400 to-cyan-400 shadow-[0_0_12px_rgba(236,72,153,0.4)]';
+      case 'classic':
+      default:
+        return 'p-[2px] rounded-full border-2';
+    }
+  };
+
+  const getFrameStyles = () => {
+    if (borderStyle === 'glow') {
+      return {
+        borderColor: theme,
+        boxShadow: `0 0 14px ${theme}99, inset 0 0 6px ${theme}66`
+      };
+    }
+    if (borderStyle === 'classic') {
+      return {
+        borderColor: theme,
+        boxShadow: `0 2px 8px ${theme}33`
+      };
+    }
+    return undefined;
+  };
+
+  return (
+    <div 
+      className={`relative inline-flex items-center justify-center shrink-0 ${onClick ? 'cursor-pointer transition-transform hover:scale-105 active:scale-95' : ''} ${className}`}
+      onClick={onClick}
+      title={title}
+    >
+      <div 
+        className={`${getFrameClasses()} ${sizeStyles.wrapper} flex items-center justify-center`}
+        style={getFrameStyles()}
+      >
+        <div className={`${sizeStyles.inner} rounded-full overflow-hidden bg-[#161616] flex items-center justify-center relative shadow-inner`}>
+          {avatarUrl ? (
+            <img src={avatarUrl} alt={nama} className="w-full h-full object-cover" />
+          ) : (
+            <div 
+              className="w-full h-full flex items-center justify-center font-black uppercase bg-[#1c1c1c]"
+              style={{ color: theme }}
+            >
+              {nama ? nama.charAt(0).toUpperCase() : <UserCircle size={20} />}
+            </div>
+          )}
+        </div>
+
+        {/* Mini Badges for Champion & Captain styles */}
+        {!isSmall && borderStyle === 'champion' && (
+          <span className="absolute -top-1 -right-1 text-[9px] bg-[#ffd700] text-black rounded-full w-4 h-4 flex items-center justify-center font-black shadow-md border border-black" title="Champion">
+            ★
+          </span>
+        )}
+        {!isSmall && borderStyle === 'captain' && (
+          <span 
+            className="absolute -bottom-1 -left-1 text-[8px] font-black text-black px-1 py-0.2 rounded-sm shadow-md border border-black bg-amber-400"
+            title="Captain"
+          >
+            C
+          </span>
+        )}
+      </div>
+
+      {isOnline && (
+        <span 
+          className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-black animate-pulse" 
+          title="Online sekarang"
+        />
+      )}
+    </div>
+  );
+}
+
+function GeminiEdgeAurora({ intensity = 'normal' }: { intensity?: 'subtle' | 'normal' | 'vibrant' }) {
+  const opacityClass = intensity === 'subtle' ? 'opacity-40' : intensity === 'vibrant' ? 'opacity-80' : 'opacity-60';
+  return (
+    <div className={`absolute -inset-6 sm:-inset-8 pointer-events-none overflow-hidden z-0 rounded-[38px] ${opacityClass}`}>
+      {/* Pojok Kiri Atas: Gemini Electric Blue */}
+      <div className="absolute -top-12 -left-12 w-48 h-48 rounded-full bg-gradient-to-br from-[#4285f4] via-[#2b71f0] to-[#00f2fe] blur-[55px] animate-gemini-float-1" />
+      
+      {/* Pojok Kanan Atas: Gemini Cosmic Violet / Pink Magenta */}
+      <div className="absolute -top-12 -right-12 w-52 h-52 rounded-full bg-gradient-to-bl from-[#9b51e0] via-[#d946ef] to-[#7928ca] blur-[58px] animate-gemini-float-2" />
+      
+      {/* Pojok Kiri Bawah: Cyber Cyan & Mint Neon */}
+      <div className="absolute -bottom-12 -left-12 w-48 h-48 rounded-full bg-gradient-to-tr from-[#00f2fe] via-[#06b6d4] to-[#10b981] blur-[55px] animate-gemini-float-2" />
+      
+      {/* Pojok Kanan Bawah: Champion Gold & Amber Neon */}
+      <div className="absolute -bottom-12 -right-12 w-48 h-48 rounded-full bg-gradient-to-tl from-[#ffd700] via-[#f59e0b] to-[#9b51e0] blur-[55px] animate-gemini-float-1" />
+      
+      {/* Pendaran Bingkai Tengah (Border Glow Ring) */}
+      <div className="absolute inset-4 rounded-[28px] border border-cyan-400/20 bg-gradient-to-tr from-[#4285f4]/10 via-[#9b51e0]/10 to-[#00f2fe]/10 blur-[15px] animate-gemini-pulse" />
+    </div>
+  );
+}
+
+function GeminiCenterNebula({ className = '' }: { className?: string }) {
+  return (
+    <div className={`absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center z-0 select-none ${className}`}>
+      {/* Nebula Cahaya Neon Gemini di Tengah Chat */}
+      <div className="relative w-64 h-64 sm:w-84 sm:h-84 flex items-center justify-center opacity-45">
+        {/* Lapisan 1: Pendaran Berputar Utama (Gemini Cosmic Aurora) */}
+        <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#4285f4] via-[#9b51e0] to-[#00f2fe] blur-[75px] animate-gemini-spin" />
+        
+        {/* Lapisan 2: Gelombang Warna Magenta & Cyan Mengambang */}
+        <div className="absolute inset-4 rounded-full bg-gradient-to-bl from-[#ec4899] via-[#8a2be2] to-[#06b6d4] blur-[60px] animate-gemini-float-1" />
+        
+        {/* Lapisan 3: Inti Cahaya Berdenyut Halus */}
+        <div className="absolute w-36 h-36 rounded-full bg-gradient-to-r from-[#00f2fe] via-[#4facfe] to-[#ffd700] blur-[45px] animate-gemini-pulse" />
+      </div>
+    </div>
+  );
+}
 
 type Schedule = {
   id: string;
@@ -133,12 +332,39 @@ export default function Page() {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   
+  const [selectedMember, setSelectedMember] = useState<User | null>(null);
+  const [editingThemeColor, setEditingThemeColor] = useState<string>('#d4af37');
+  const [editingAvatarBorder, setEditingAvatarBorder] = useState<string>('classic');
+  
   const [loginError, setLoginError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [selectedGalleryPhoto, setSelectedGalleryPhoto] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
+
+  const exportDataToCSV = (usersToExport: User[]) => {
+    const headers = ['Nama', 'ID Member', 'Posisi', 'No Punggung', 'WhatsApp', 'Status Akun', 'Status Kas', 'Bio / Motto'];
+    const rows = usersToExport.map(u => [
+      `"${(u.nama || '').replace(/"/g, '""')}"`,
+      `"${(u.id || '').replace(/"/g, '""')}"`,
+      `"${(u.posisi || '').replace(/"/g, '""')}"`,
+      `"${(u.jerseyNumber ? '#' + u.jerseyNumber : '-').replace(/"/g, '""')}"`,
+      `"${(u.wa || '').replace(/"/g, '""')}"`,
+      `"${(u.status === 'active' ? 'Aktif' : u.status === 'pending' ? 'Menunggu' : 'Ditolak')}"`,
+      `"${(u.isPaid ? 'Lunas' : 'Belum Lunas')}"`,
+      `"${(u.bio || '-').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `rekap_futsar_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   useEffect(() => {
     setCurrentTime(Date.now());
@@ -210,6 +436,8 @@ export default function Page() {
       senderWa: user.wa,
       senderPosisi: user.posisi || 'Member',
       senderAvatar: user.avatarUrl || '',
+      senderThemeColor: user.themeColor || '#d4af37',
+      senderAvatarBorder: user.avatarBorder || 'classic',
       role: user.role || 'member',
       text,
       timestamp: Date.now()
@@ -434,12 +662,27 @@ export default function Page() {
     if (!user) return;
     
     const formData = new FormData(e.currentTarget);
-    const posisi = formData.get('posisi') as string;
+    const posisi = (formData.get('posisi') as string) || user.posisi || 'Member';
+    const jerseyNumber = (formData.get('jerseyNumber') as string)?.trim() || '';
+    const bio = (formData.get('bio') as string)?.trim() || '';
+    const themeColor = editingThemeColor || user.themeColor || '#d4af37';
+    const avatarBorder = editingAvatarBorder || user.avatarBorder || 'classic';
 
-    const updatedUser = { ...user, posisi };
-    
-    await updateDoc(doc(db, "users", user.wa), { posisi });
-    // User state is updated via onSnapshot
+    if (user.wa === 'ADMIN' || user.role === 'admin') {
+      const updatedAdmin = { ...user, posisi, jerseyNumber, bio, themeColor, avatarBorder };
+      setUser(updatedAdmin);
+      alert('Profil Admin berhasil diperbarui!');
+      setActiveModal(null);
+      return;
+    }
+
+    await updateDoc(doc(db, "users", user.wa), { 
+      posisi, 
+      jerseyNumber, 
+      bio, 
+      themeColor,
+      avatarBorder
+    });
     
     alert('Profil berhasil diperbarui!');
     setActiveModal(null);
@@ -599,28 +842,33 @@ export default function Page() {
 
           </div>
 
-          {/* Centered Content Card */}
-          <div className="relative z-20 text-center w-full max-w-[380px] my-auto py-8 px-6 bg-black/50 backdrop-blur-xl border border-[#d4af37]/30 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.8)]">
-            <div className="text-[13px] font-bold tracking-[3px] mb-1 uppercase text-[#ddd]">
-              Welcome To Mini Site
-            </div>
-            <h1 className="text-[48px] sm:text-[55px] font-black text-transparent bg-clip-text bg-gradient-to-r from-[#ffe89c] via-[#d4af37] to-[#997913] mb-6 drop-shadow-[0_4px_25px_rgba(212,175,55,0.5)] tracking-[4px] leading-tight">
-              FUTSAR
-            </h1>
-            
-            <div className="flex flex-col gap-3.5">
-              <button 
-                onClick={() => setActiveModal('daftar')}
-                className="w-full py-3.5 rounded-full text-[15px] font-bold uppercase tracking-[2px] bg-gradient-to-r from-[#d4af37] to-[#b8911f] text-[#0a0a0a] shadow-[0_5px_25px_rgba(212,175,55,0.4)] transition-all active:scale-95 hover:brightness-110"
-              >
-                Daftar
-              </button>
-              <button 
-                onClick={() => setActiveModal('masuk')}
-                className="w-full py-3.5 rounded-full text-[15px] font-bold uppercase tracking-[2px] bg-black/40 text-white border-2 border-[#d4af37] transition-all active:scale-95 hover:bg-[#d4af37]/20"
-              >
-                Masuk
-              </button>
+          {/* Centered Content Card with Gemini Animated Neon Aurora Edge Lights */}
+          <div className="relative my-auto w-full max-w-[380px] flex items-center justify-center">
+            {/* Ambient Gemini Neon Aurora at each edge/corner */}
+            <GeminiEdgeAurora intensity="normal" />
+
+            <div className="relative z-20 text-center w-full py-8 px-6 bg-black/60 backdrop-blur-xl border border-[#d4af37]/40 rounded-3xl shadow-[0_15px_50px_rgba(0,0,0,0.85)]">
+              <div className="text-[13px] font-bold tracking-[3px] mb-1 uppercase text-[#ddd]">
+                Welcome To Mini Site
+              </div>
+              <h1 className="text-[48px] sm:text-[55px] font-black text-transparent bg-clip-text bg-gradient-to-r from-[#ffe89c] via-[#d4af37] to-[#997913] mb-6 drop-shadow-[0_4px_25px_rgba(212,175,55,0.5)] tracking-[4px] leading-tight">
+                FUTSAR
+              </h1>
+              
+              <div className="flex flex-col gap-3.5">
+                <button 
+                  onClick={() => setActiveModal('daftar')}
+                  className="w-full py-3.5 rounded-full text-[15px] font-bold uppercase tracking-[2px] bg-gradient-to-r from-[#d4af37] to-[#b8911f] text-[#0a0a0a] shadow-[0_5px_25px_rgba(212,175,55,0.4)] transition-all active:scale-95 hover:brightness-110 cursor-pointer"
+                >
+                  Daftar
+                </button>
+                <button 
+                  onClick={() => setActiveModal('masuk')}
+                  className="w-full py-3.5 rounded-full text-[15px] font-bold uppercase tracking-[2px] bg-black/40 text-white border-2 border-[#d4af37] transition-all active:scale-95 hover:bg-[#d4af37]/20 cursor-pointer"
+                >
+                  Masuk
+                </button>
+              </div>
             </div>
           </div>
 
@@ -730,45 +978,87 @@ export default function Page() {
           <main className="flex-1 w-full max-w-7xl mx-auto flex flex-col gap-6 p-4 md:p-8 z-10 relative">
             <section className="w-full flex flex-col gap-6">
               {/* Member Card */}
-              <div className="bg-gradient-to-br from-[#151515]/70 to-[#0a0a0a]/70 backdrop-blur-md border border-[#d4af37]/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl">
+              <div 
+                className="bg-gradient-to-br from-[#151515]/80 to-[#0a0a0a]/80 backdrop-blur-md rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl transition-all border"
+                style={{
+                  borderColor: user.themeColor ? `${user.themeColor}50` : 'rgba(212,175,55,0.3)',
+                  boxShadow: `0 10px 40px ${user.themeColor ? user.themeColor + '15' : 'rgba(212,175,55,0.1)'}`
+                }}
+              >
                 <div className="absolute right-[-20px] bottom-[-20px] opacity-5">
-                  <Shirt size={240} className="text-[#d4af37]" />
+                  <Shirt size={240} style={{ color: user.themeColor || '#d4af37' }} />
                 </div>
                 <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6">
-                  <div>
+                  <div className="flex-1">
                     <div className="flex items-center gap-4 mb-4">
-                      {user.avatarUrl ? (
-                        <img src={user.avatarUrl} alt="Avatar" className="w-16 h-16 rounded-full object-cover border-2 border-[#d4af37]" />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-[#1a1a1a]/60 backdrop-blur-sm border-2 border-[#d4af37] flex items-center justify-center">
-                          <UserCircle size={32} className="text-[#d4af37]" />
-                        </div>
-                      )}
+                      <PlayerAvatar 
+                        user={user} 
+                        size="lg" 
+                        onClick={() => setSelectedMember(user)}
+                        title="Klik untuk lihat kartu profil"
+                      />
                       <div>
-                        <h2 className="font-black text-[28px] md:text-[34px] text-[#d4af37] tracking-tight mb-0 capitalize leading-none">Welcome, {user.nama}</h2>
-                        <p className="text-gray-400 text-xs mt-1">Your stats are looking good this season.</p>
+                        <div className="flex items-center gap-2">
+                          <h2 
+                            className="font-black text-[26px] md:text-[32px] tracking-tight mb-0 capitalize leading-none"
+                            style={{ color: user.themeColor || '#d4af37' }}
+                          >
+                            Welcome, {user.nama}
+                          </h2>
+                          {user.jerseyNumber && (
+                            <span 
+                              className="px-2.5 py-0.5 rounded-lg text-xs font-black border"
+                              style={{
+                                color: user.themeColor || '#d4af37',
+                                borderColor: `${user.themeColor || '#d4af37'}60`,
+                                backgroundColor: `${user.themeColor || '#d4af37'}15`
+                              }}
+                            >
+                              #{user.jerseyNumber}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-gray-400 text-xs mt-1">
+                          {user.bio ? `"${user.bio}"` : 'Pemain resmi klub Futsar. Siap tanding dan junjung sportivitas!'}
+                        </p>
                       </div>
                     </div>
                     
                     <div className="flex flex-wrap gap-6 md:gap-12 mt-6">
-                      <div className="border-l-2 border-[#d4af37] pl-4">
+                      <div className="border-l-2 pl-4" style={{ borderColor: user.themeColor || '#d4af37' }}>
                         <p className="text-[10px] text-[#888] font-bold uppercase tracking-tighter">Member ID</p>
                         <p className="text-lg md:text-xl font-mono font-bold">{user.id}</p>
                       </div>
-                      <div className="border-l-2 border-[#d4af37] pl-4">
+                      <div className="border-l-2 pl-4" style={{ borderColor: user.themeColor || '#d4af37' }}>
                         <p className="text-[10px] text-[#888] font-bold uppercase tracking-tighter">Position</p>
                         <p className="text-lg md:text-xl font-bold uppercase">{user.posisi}</p>
                       </div>
-                      <div className="border-l-2 border-[#d4af37] pl-4">
+                      <div className="border-l-2 pl-4" style={{ borderColor: user.themeColor || '#d4af37' }}>
                         <p className="text-[10px] text-[#888] font-bold uppercase tracking-tighter">Contact</p>
                         <p className="text-lg md:text-xl font-bold">{user.wa}</p>
                       </div>
                     </div>
                   </div>
                   
-                  <button onClick={() => setActiveModal('profile')} className="self-start px-4 py-2 bg-[#1a1a1a] text-[#d4af37] border border-[#d4af37]/50 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-[#d4af37]/10 transition-colors active:scale-95 shrink-0">
-                    <Edit2 size={14} /> Edit Profil
-                  </button>
+                  <div className="flex sm:flex-col gap-2 shrink-0">
+                    <button 
+                      onClick={() => setSelectedMember(user)} 
+                      className="px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 text-black shadow-md cursor-pointer"
+                      style={{ backgroundColor: user.themeColor || '#d4af37' }}
+                    >
+                      <Eye size={14} /> Kartu Profil
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setEditingThemeColor(user.themeColor || '#d4af37');
+                        setEditingAvatarBorder(user.avatarBorder || 'classic');
+                        setActiveModal('profile');
+                      }} 
+                      className="px-4 py-2.5 bg-[#1a1a1a] text-[#d4af37] border border-[#d4af37]/50 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-[#d4af37]/10 transition-colors active:scale-95 cursor-pointer"
+                    >
+                      <Edit2 size={14} /> Edit Profil
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -920,56 +1210,169 @@ export default function Page() {
 
       {/* --- MODALS --- */}
       {activeModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[500] flex justify-center items-center p-3 sm:p-4 animate-in fade-in duration-200">
-          <div className={`bg-[#111] w-full ${
-            activeModal === 'community_chat' 
-              ? 'max-w-[500px] h-[90vh] sm:h-[650px] flex flex-col p-0 overflow-hidden' 
-              : activeModal === 'gallery' 
-              ? 'max-w-[500px] p-[25px]' 
-              : activeModal === 'ai_bot'
-              ? 'max-w-[420px] p-[25px]'
-              : 'max-w-[380px] p-[25px]'
-          } max-h-[92vh] rounded-[20px] border border-[#d4af37] relative shadow-[0_10px_40px_rgba(0,0,0,0.85)] animate-in slide-in-from-bottom-6 duration-300 ${activeModal !== 'community_chat' ? 'overflow-y-auto scrollbar-thin scrollbar-thumb-[#d4af37]' : ''}`}>
-            {activeModal !== 'community_chat' && (
-              <button onClick={() => setActiveModal(null)} className="absolute top-[15px] right-[20px] text-[#d4af37] hover:opacity-80 z-20">
-                <X size={24} />
-              </button>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[500] flex justify-center items-center p-3 sm:p-4 animate-in fade-in duration-200">
+          <div className="relative w-full flex justify-center items-center max-w-[500px]">
+            {/* Gemini Neon Edge Aurora for Login, Register & Chat Modals */}
+            {(activeModal === 'masuk' || activeModal === 'daftar' || activeModal === 'community_chat') && (
+              <GeminiEdgeAurora intensity={activeModal === 'community_chat' ? 'subtle' : 'normal'} />
             )}
+
+            <div className={`bg-[#111] w-full ${
+              activeModal === 'community_chat' 
+                ? 'max-w-[500px] h-[90vh] sm:h-[650px] flex flex-col p-0 overflow-hidden' 
+                : activeModal === 'gallery' 
+                ? 'max-w-[500px] p-[25px]' 
+                : activeModal === 'ai_bot'
+                ? 'max-w-[420px] p-[25px]'
+                : 'max-w-[380px] p-[25px]'
+            } max-h-[92vh] rounded-[24px] border border-[#d4af37]/60 relative shadow-[0_15px_50px_rgba(0,0,0,0.9)] z-10 animate-in slide-in-from-bottom-6 duration-300 ${activeModal !== 'community_chat' ? 'overflow-y-auto scrollbar-thin scrollbar-thumb-[#d4af37]' : ''}`}>
+              {activeModal !== 'community_chat' && (
+                <button onClick={() => setActiveModal(null)} className="absolute top-[15px] right-[20px] text-[#d4af37] hover:opacity-80 z-20 cursor-pointer">
+                  <X size={24} />
+                </button>
+              )}
 
             {/* PROFILE MODAL */}
             {activeModal === 'profile' && user && (
               <>
-                <h2 className="text-[#d4af37] text-[24px] font-black uppercase tracking-[1px] mt-2 mb-5 border-b border-[#333] pb-2">Edit Profil</h2>
-                <form onSubmit={handleUpdateProfile} className="space-y-6 text-left">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="relative group">
-                      {user.avatarUrl ? (
-                        <img src={user.avatarUrl} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-[#d4af37]" />
-                      ) : (
-                        <div className="w-24 h-24 rounded-full bg-[#1a1a1a]/60 backdrop-blur-sm border-4 border-[#d4af37] flex items-center justify-center">
-                          <UserCircle size={48} className="text-[#d4af37]" />
-                        </div>
-                      )}
-                      <label className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                        <Camera size={24} className="text-white" />
+                <h2 className="text-[#d4af37] text-[22px] font-black uppercase tracking-[1px] mt-2 mb-4 border-b border-[#333] pb-2 flex items-center justify-between">
+                  <span>Edit Profil</span>
+                  <span className="text-[11px] font-mono text-[#888] font-normal">{user.id}</span>
+                </h2>
+                <form onSubmit={handleUpdateProfile} className="space-y-4 text-left">
+                  {/* Avatar Upload & Live Border Preview */}
+                  <div className="flex flex-col items-center gap-2 p-3 bg-white/[0.02] border border-white/5 rounded-2xl">
+                    <div className="relative group cursor-pointer">
+                      <PlayerAvatar 
+                        user={user} 
+                        customThemeColor={editingThemeColor}
+                        customBorder={editingAvatarBorder}
+                        size="xl" 
+                      />
+                      <label className="absolute inset-0 flex items-center justify-center bg-black/65 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                        <Camera size={22} className="text-white" />
                         <input type="file" accept="image/*" onChange={handleProfileAvatarUpload} className="hidden" />
                       </label>
                     </div>
-                    <p className="text-[10px] text-[#888] uppercase tracking-widest text-center">Ketuk untuk ganti foto</p>
+                    <div className="text-center">
+                      <p className="text-[11px] font-bold text-gray-200">
+                        {AVATAR_BORDERS.find(b => b.id === editingAvatarBorder)?.name || 'Solid Klasik'}
+                      </p>
+                      <p className="text-[10px] text-[#888] tracking-wider">Ketuk foto untuk mengganti file avatar</p>
+                    </div>
+                  </div>
+
+                  {/* PILIH BORDER PROFIL (AVATAR FRAME) */}
+                  <div>
+                    <label className="block text-[11px] text-[#aaa] font-bold uppercase mb-1.5 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Award size={13} className="text-[#d4af37]" /> Border Profil (Frame)
+                      </span>
+                      <span className="text-[10px] text-[#d4af37] font-semibold">
+                        {AVATAR_BORDERS.find(b => b.id === editingAvatarBorder)?.name}
+                      </span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10">
+                      {AVATAR_BORDERS.map((borderOpt) => {
+                        const isSelected = editingAvatarBorder === borderOpt.id;
+                        const BorderIcon = borderOpt.icon;
+                        return (
+                          <button
+                            key={borderOpt.id}
+                            type="button"
+                            onClick={() => setEditingAvatarBorder(borderOpt.id)}
+                            className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                              isSelected
+                                ? 'bg-white/[0.08] border-[#d4af37] shadow-[0_0_12px_rgba(212,175,55,0.25)] ring-1 ring-[#d4af37]'
+                                : 'bg-[#151515]/60 border-white/10 hover:border-white/20 hover:bg-white/[0.04]'
+                            }`}
+                          >
+                            <PlayerAvatar 
+                              user={user}
+                              customThemeColor={editingThemeColor}
+                              customBorder={borderOpt.id}
+                              size="sm"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-white truncate flex items-center gap-1">
+                                <BorderIcon size={12} className={isSelected ? 'text-[#d4af37]' : 'text-gray-400'} />
+                                <span>{borderOpt.name}</span>
+                              </p>
+                              <p className="text-[9px] text-gray-400 line-clamp-1 leading-tight mt-0.5">
+                                {borderOpt.desc}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* WARNA TEMA PROFIL */}
+                  <div>
+                    <label className="block text-[11px] text-[#aaa] font-bold uppercase mb-1.5 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5"><Palette size={13} className="text-[#d4af37]" /> Warna Tema Profil</span>
+                      <span className="text-[10px] text-gray-400 capitalize">{PROFILE_THEMES.find(t => t.color === editingThemeColor)?.name || 'Gold Champion'}</span>
+                    </label>
+                    <div className="grid grid-cols-7 gap-2 pt-1">
+                      {PROFILE_THEMES.map((theme) => {
+                        const isSelected = (editingThemeColor || '#d4af37').toLowerCase() === theme.color.toLowerCase();
+                        return (
+                          <button
+                            key={theme.id}
+                            type="button"
+                            onClick={() => setEditingThemeColor(theme.color)}
+                            title={theme.name}
+                            className={`h-7 rounded-lg transition-all flex items-center justify-center cursor-pointer ${isSelected ? 'ring-2 ring-white scale-110 shadow-lg' : 'opacity-70 hover:opacity-100 hover:scale-105'}`}
+                            style={{ backgroundColor: theme.color }}
+                          >
+                            {isSelected && <span className="w-2 h-2 rounded-full bg-white shadow-sm"></span>}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] text-[#888] font-bold uppercase mb-1">Pilih Posisi Main</label>
-                    <select name="posisi" defaultValue={user.posisi} className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#d4af37]" required>
-                      <option value="Kiper">Kiper (GK)</option>
-                      <option value="Anchor">Anchor (Bawah)</option>
-                      <option value="Flank">Flank (Sayap)</option>
-                      <option value="Pivot">Pivot (Depan)</option>
-                      <option value="All-Round">All-Round (Bebas)</option>
+                    <label className="block text-[11px] text-[#aaa] font-bold uppercase mb-1">Posisi Main</label>
+                    <select name="posisi" defaultValue={user.posisi || 'Flank'} className="w-full p-2.5 rounded-lg bg-[#1a1a1a]/80 border border-[#333] text-white focus:outline-none focus:border-[#d4af37] text-xs font-semibold" required>
+                      <option value="Kiper">Kiper (GoalKeeper)</option>
+                      <option value="Anchor">Anchor (Pemain Bertahan)</option>
+                      <option value="Flank">Flank (Pemain Sayap / Ala)</option>
+                      <option value="Pivot">Pivot (Penyerang Utama)</option>
+                      <option value="All-Round">All-Round (Pemain Serbaguna)</option>
                     </select>
                   </div>
 
-                  <button type="submit" className="w-full p-4 rounded-lg bg-[#d4af37] text-black text-[15px] font-black uppercase tracking-[1px] transition-transform active:scale-95 shadow-[0_5px_15px_rgba(212,175,55,0.3)]">
+                  <div>
+                    <label className="block text-[11px] text-[#aaa] font-bold uppercase mb-1">Nomor Punggung (Jersey #)</label>
+                    <input 
+                      type="text" 
+                      name="jerseyNumber" 
+                      defaultValue={user.jerseyNumber || ''} 
+                      placeholder="Contoh: 10 atau 7" 
+                      maxLength={3}
+                      className="w-full p-2.5 rounded-lg bg-[#1a1a1a]/80 border border-[#333] text-white focus:outline-none focus:border-[#d4af37] text-xs" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] text-[#aaa] font-bold uppercase mb-1">Bio / Motto Pemain</label>
+                    <input 
+                      type="text" 
+                      name="bio" 
+                      defaultValue={user.bio || ''} 
+                      placeholder="Contoh: Main tenang, oper akurat, gol datang!" 
+                      maxLength={80}
+                      className="w-full p-2.5 rounded-lg bg-[#1a1a1a]/80 border border-[#333] text-white focus:outline-none focus:border-[#d4af37] text-xs" 
+                    />
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    className="w-full p-3.5 rounded-lg text-black text-[14px] font-black uppercase tracking-[1px] transition-transform active:scale-95 shadow-md mt-2 cursor-pointer"
+                    style={{ backgroundColor: editingThemeColor || '#d4af37' }}
+                  >
                     Simpan Profil
                   </button>
                 </form>
@@ -1155,18 +1558,40 @@ export default function Page() {
             {/* REKAP KAS MODAL */}
             {activeModal === 'rekap_kas' && (
               <>
-                <h2 className="text-[#d4af37] text-[24px] font-black uppercase tracking-[1px] mt-2 mb-5 border-b border-[#333] pb-2">Catatan Kas</h2>
-                <p className="text-[12px] text-[#888] text-left mb-5">Status tagihan semua anggota Futsar Club yang terdaftar:</p>
+                <div className="flex justify-between items-center mt-2 mb-3 border-b border-[#333] pb-2">
+                  <h2 className="text-[#d4af37] text-[22px] font-black uppercase tracking-[1px]">Catatan Kas</h2>
+                  <button 
+                    onClick={() => exportDataToCSV(allUsers)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#27ae60]/20 hover:bg-[#27ae60] text-[#27ae60] hover:text-white border border-[#27ae60]/40 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-sm"
+                    title="Unduh Rekap CSV"
+                  >
+                    <Download size={13} /> Ekspor CSV
+                  </button>
+                </div>
+                <p className="text-[12px] text-[#888] text-left mb-4">Status tagihan semua anggota Futsar Club yang terdaftar (klik anggota untuk melihat profil):</p>
                 
-                <div className="flex flex-col gap-3 mb-5 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#d4af37] pr-2">
+                <div className="flex flex-col gap-2.5 mb-5 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#d4af37] pr-2">
                   {allUsers.length === 0 ? (
                     <p className="text-sm text-gray-500 italic">Belum ada anggota yang mendaftar.</p>
                   ) : (
                     allUsers.map((u) => (
-                      <div key={u.id} className={`flex justify-between items-center bg-[#1a1a1a] p-3 rounded-lg border-l-4 ${u.isPaid ? 'border-[#27ae60]' : 'border-[#ff4d4d]'}`}>
-                        <div className="flex flex-col text-left">
-                          <span className="text-[14px] font-bold text-white capitalize">{u.nama}</span>
-                          <span className="text-[10px] text-[#aaa]">{u.id} • {settings.activePaymentCycle === 'bulanan' ? 'Bulanan' : 'Mingguan'}</span>
+                      <div 
+                        key={u.id} 
+                        onClick={() => setSelectedMember(u)}
+                        className={`flex justify-between items-center bg-[#1a1a1a] hover:bg-[#242424] p-3 rounded-xl border-l-4 ${u.isPaid ? 'border-[#27ae60]' : 'border-[#ff4d4d]'} transition-all cursor-pointer group`}
+                        title="Klik untuk lihat profil anggota"
+                      >
+                        <div className="flex items-center gap-3 text-left">
+                          <PlayerAvatar user={u} size="sm" />
+                          <div className="flex flex-col">
+                            <span className="text-[13px] font-bold text-white capitalize group-hover:text-[#d4af37] transition-colors flex items-center gap-1.5">
+                              {u.nama}
+                              {u.jerseyNumber && (
+                                <span className="text-[10px] text-[#888] font-normal">#{u.jerseyNumber}</span>
+                              )}
+                            </span>
+                            <span className="text-[10px] text-[#aaa]">{u.id} • {u.posisi || 'Member'}</span>
+                          </div>
                         </div>
                         <div className="flex flex-col items-end">
                           {u.isPaid ? (
@@ -1184,7 +1609,7 @@ export default function Page() {
                   )}
                 </div>
 
-                <button onClick={() => setActiveModal(null)} className="w-full bg-transparent text-white border border-[#555] p-4 rounded-lg text-[15px] font-bold uppercase cursor-pointer transition-transform active:scale-95">
+                <button onClick={() => setActiveModal(null)} className="w-full bg-transparent text-white border border-[#555] p-3.5 rounded-lg text-[14px] font-bold uppercase cursor-pointer transition-transform active:scale-95">
                   Tutup
                 </button>
               </>
@@ -1488,20 +1913,11 @@ export default function Page() {
                           .map((ou) => (
                             <button
                               key={ou.wa}
-                              onClick={() => setChatInput(prev => `${prev ? prev + ' ' : ''}@${ou.nama} `)}
+                              onClick={() => setSelectedMember(ou)}
                               className="flex items-center gap-1.5 bg-[#1c1c1c] hover:bg-[#282828] border border-emerald-500/40 rounded-full pl-1 pr-2.5 py-0.5 text-[11px] text-white shrink-0 transition-colors group cursor-pointer"
-                              title={`Tag @${ou.nama}`}
+                              title={`Lihat profil ${ou.nama}`}
                             >
-                              <div className="relative">
-                                {ou.avatarUrl ? (
-                                  <img src={ou.avatarUrl} alt={ou.nama} className="w-5 h-5 rounded-full object-cover" />
-                                ) : (
-                                  <div className="w-5 h-5 rounded-full bg-[#333] flex items-center justify-center text-[9px] font-bold text-[#d4af37]">
-                                    {ou.nama.charAt(0).toUpperCase()}
-                                  </div>
-                                )}
-                                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-black"></span>
-                              </div>
+                              <PlayerAvatar user={ou} size="xs" showOnlineBadge={true} />
                               <span className="font-semibold text-[10px] text-white group-hover:text-[#d4af37] truncate max-w-[80px]">
                                 {ou.nama}
                               </span>
@@ -1510,94 +1926,118 @@ export default function Page() {
                       )}
                     </div>
 
-                    {/* Messages Container */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-[#d4af37]/30">
-                      {communityMessages.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-center p-6 text-[#777]">
-                          <div className="w-14 h-14 rounded-2xl bg-[#d4af37]/10 flex items-center justify-center text-[#d4af37] mb-3">
-                            <MessagesSquare size={28} />
+                    {/* Messages Container with Gemini Center Nebula Glow */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-[#d4af37]/30 relative">
+                      {/* Ambient Animated Gemini Neon Center Nebula */}
+                      <GeminiCenterNebula />
+
+                      <div className="relative z-10 space-y-3 min-h-full flex flex-col justify-end">
+                        {communityMessages.length === 0 ? (
+                          <div className="my-auto flex flex-col items-center justify-center text-center p-6 text-[#777]">
+                            <div className="w-14 h-14 rounded-2xl bg-[#d4af37]/10 flex items-center justify-center text-[#d4af37] mb-3">
+                              <MessagesSquare size={28} />
+                            </div>
+                            <p className="text-sm font-bold text-white mb-1">Ruang Chat Masih Kosong</p>
+                            <p className="text-xs text-[#888] max-w-[240px]">
+                              Mulai obrolan seru, koordinasi pertandingan, atau sapa anggota Futsar lainnya!
+                            </p>
                           </div>
-                          <p className="text-sm font-bold text-white mb-1">Ruang Chat Masih Kosong</p>
-                          <p className="text-xs text-[#888] max-w-[240px]">
-                            Mulai obrolan seru, koordinasi pertandingan, atau sapa anggota Futsar lainnya!
-                          </p>
-                        </div>
-                      ) : (
-                        communityMessages.map((msg) => {
-                          const isOwn = user ? (msg.senderWa === user.wa || (user.role === 'admin' && msg.senderWa === 'ADMIN')) : false;
-                          const isSenderAdmin = msg.role === 'admin' || msg.senderWa === 'ADMIN';
-                          const msgDate = new Date(msg.timestamp);
-                          const timeStr = isNaN(msgDate.getTime()) 
-                            ? '' 
-                            : msgDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                        ) : (
+                          communityMessages.map((msg) => {
+                            const isOwn = user ? (msg.senderWa === user.wa || (user.role === 'admin' && msg.senderWa === 'ADMIN')) : false;
+                            const isSenderAdmin = msg.role === 'admin' || msg.senderWa === 'ADMIN';
+                            const msgDate = new Date(msg.timestamp);
+                            const timeStr = isNaN(msgDate.getTime()) 
+                              ? '' 
+                              : msgDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-                          return (
-                            <div key={msg.id} className={`flex gap-2.5 ${isOwn ? 'justify-end' : 'justify-start'} group items-end`}>
-                              {!isOwn && (
-                                <div className="w-7 h-7 rounded-full shrink-0 overflow-hidden bg-[#222] border border-[#444] flex items-center justify-center text-[10px] font-bold text-[#d4af37]">
-                                  {msg.senderAvatar ? (
-                                    <img src={msg.senderAvatar} alt={msg.senderName} className="w-full h-full object-cover" />
-                                  ) : (
-                                    msg.senderName.charAt(0).toUpperCase()
-                                  )}
-                                </div>
-                              )}
+                            const senderUser: User = allUsers.find(u => u.wa === msg.senderWa) || {
+                              nama: msg.senderName,
+                              wa: msg.senderWa,
+                              posisi: msg.senderPosisi || 'Member',
+                              id: isSenderAdmin ? 'OFFICIAL-ADMIN' : 'FUTSAR-MEMBER',
+                              avatarUrl: msg.senderAvatar,
+                              themeColor: msg.senderThemeColor || '#d4af37',
+                              avatarBorder: msg.senderAvatarBorder || 'classic',
+                              role: msg.role,
+                              status: 'active' as const
+                            };
 
-                              <div className={`max-w-[78%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-                                <div className="flex items-center gap-1.5 mb-1 px-1">
-                                  <span className={`text-[11px] font-bold ${isOwn ? 'text-[#d4af37]' : isSenderAdmin ? 'text-[#e53e3e]' : 'text-[#bbb]'}`}>
-                                    {msg.senderName}
-                                  </span>
-                                  {isSenderAdmin ? (
-                                    <span className="bg-[#e53e3e]/20 text-[#e53e3e] border border-[#e53e3e]/40 text-[8px] font-black px-1.5 py-0.2 rounded uppercase">
-                                      Admin
-                                    </span>
-                                  ) : (
-                                    msg.senderPosisi && (
-                                      <span className="bg-[#262626] text-[#aaa] text-[8px] font-semibold px-1.5 py-0.2 rounded uppercase">
-                                        {msg.senderPosisi}
-                                      </span>
-                                    )
-                                  )}
-                                  <span className="text-[9px] text-[#666]">{timeStr}</span>
-                                </div>
+                            return (
+                              <div key={msg.id} className={`flex gap-2.5 ${isOwn ? 'justify-end' : 'justify-start'} group items-end`}>
+                                {!isOwn && (
+                                  <div className="shrink-0">
+                                    <PlayerAvatar 
+                                      user={senderUser} 
+                                      size="xs" 
+                                      onClick={() => setSelectedMember(senderUser)}
+                                      title={`Lihat profil ${msg.senderName}`}
+                                    />
+                                  </div>
+                                )}
 
-                                <div className="relative group/msg flex items-center gap-1.5">
-                                  {(isOwn || user?.role === 'admin') && (
-                                    <button 
-                                      onClick={() => handleDeleteCommunityMessage(msg.id)}
-                                      className={`opacity-0 group-hover/msg:opacity-100 p-1 text-[#666] hover:text-[#e53e3e] transition-opacity ${isOwn ? 'order-first' : 'order-last'}`}
-                                      title="Hapus pesan"
+                                <div className={`max-w-[78%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                                  <div className="flex items-center gap-1.5 mb-1 px-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedMember(senderUser)}
+                                      className={`text-[11px] font-bold hover:underline cursor-pointer ${isOwn ? 'text-[#d4af37]' : isSenderAdmin ? 'text-[#e53e3e]' : 'text-[#bbb]'}`}
+                                      title="Klik untuk lihat profil"
                                     >
-                                      <Trash2 size={12} />
+                                      {msg.senderName}
                                     </button>
-                                  )}
-                                  <div className={`p-3 rounded-2xl text-[13px] leading-relaxed break-words whitespace-pre-wrap text-left ${
-                                    isOwn 
-                                      ? 'bg-gradient-to-br from-[#d4af37] to-[#b8911f] text-[#0a0a0a] font-semibold rounded-br-none shadow-md' 
-                                      : isSenderAdmin
-                                      ? 'bg-[#201212] border border-[#e53e3e]/40 text-white rounded-bl-none shadow-md'
-                                      : 'bg-[#1c1c1c] border border-[#2e2e2e] text-white rounded-bl-none shadow-md'
-                                  }`}>
-                                    {msg.text}
+                                    {isSenderAdmin ? (
+                                      <span className="bg-[#e53e3e]/20 text-[#e53e3e] border border-[#e53e3e]/40 text-[8px] font-black px-1.5 py-0.2 rounded uppercase">
+                                        Admin
+                                      </span>
+                                    ) : (
+                                      msg.senderPosisi && (
+                                        <span className="bg-[#262626] text-[#aaa] text-[8px] font-semibold px-1.5 py-0.2 rounded uppercase">
+                                          {msg.senderPosisi}
+                                        </span>
+                                      )
+                                    )}
+                                    <span className="text-[9px] text-[#666]">{timeStr}</span>
+                                  </div>
+
+                                  <div className="relative group/msg flex items-center gap-1.5">
+                                    {(isOwn || user?.role === 'admin') && (
+                                      <button 
+                                        onClick={() => handleDeleteCommunityMessage(msg.id)}
+                                        className={`opacity-0 group-hover/msg:opacity-100 p-1 text-[#666] hover:text-[#e53e3e] transition-opacity ${isOwn ? 'order-first' : 'order-last'}`}
+                                        title="Hapus pesan"
+                                      >
+                                        <Trash2 size={12} />
+                                      </button>
+                                    )}
+                                    <div className={`p-3 rounded-2xl text-[13px] leading-relaxed break-words whitespace-pre-wrap text-left ${
+                                      isOwn 
+                                        ? 'bg-gradient-to-br from-[#d4af37] to-[#b8911f] text-[#0a0a0a] font-semibold rounded-br-none shadow-md' 
+                                        : isSenderAdmin
+                                        ? 'bg-[#201212] border border-[#e53e3e]/40 text-white rounded-bl-none shadow-md'
+                                        : 'bg-[#1c1c1c] border border-[#2e2e2e] text-white rounded-bl-none shadow-md'
+                                    }`}>
+                                      {msg.text}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
 
-                              {isOwn && (
-                                <div className="w-7 h-7 rounded-full shrink-0 overflow-hidden bg-[#d4af37] border border-[#d4af37] flex items-center justify-center text-[10px] font-bold text-black">
-                                  {user?.avatarUrl ? (
-                                    <img src={user.avatarUrl} alt={user.nama} className="w-full h-full object-cover" />
-                                  ) : (
-                                    (user?.nama || 'U').charAt(0).toUpperCase()
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })
-                      )}
-                      <div ref={communityChatEndRef} />
+                                {isOwn && user && (
+                                  <div className="shrink-0">
+                                    <PlayerAvatar 
+                                      user={user} 
+                                      size="xs" 
+                                      onClick={() => setSelectedMember(user)}
+                                      title="Lihat profil saya"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })
+                        )}
+                        <div ref={communityChatEndRef} />
+                      </div>
                     </div>
 
                     {/* Chat Input */}
@@ -1624,20 +2064,32 @@ export default function Page() {
                 {/* TAB 2: DAFTAR ANGGOTA & STATUS ONLINE */}
                 {activeChatTab === 'members' && (
                   <div className="flex-1 flex flex-col min-h-0 p-4">
-                    <div className="mb-3 shrink-0">
+                    <div className="mb-3 shrink-0 flex items-center gap-2">
                       <input 
                         type="text"
                         value={memberSearchQuery}
                         onChange={(e) => setMemberSearchQuery(e.target.value)}
-                        placeholder="Cari nama atau posisi anggota..."
-                        className="w-full bg-[#1a1a1a] border border-[#333] text-white text-xs px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-[#d4af37]"
+                        placeholder="Cari nama, posisi, atau nomor punggung..."
+                        className="flex-1 bg-[#1a1a1a] border border-[#333] text-white text-xs px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-[#d4af37]"
                       />
+                      <button 
+                        onClick={() => exportDataToCSV(allUsers.filter(u => (!u.status || u.status === 'active') && u.role !== 'admin'))}
+                        className="px-3 py-2.5 bg-[#27ae60]/15 hover:bg-[#27ae60] text-[#27ae60] hover:text-white border border-[#27ae60]/30 rounded-xl text-[10px] font-bold flex items-center gap-1 transition-all shrink-0 cursor-pointer"
+                        title="Ekspor daftar anggota CSV"
+                      >
+                        <Download size={13} />
+                        <span className="hidden sm:inline">Ekspor</span>
+                      </button>
                     </div>
 
                     <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 scrollbar-thin scrollbar-thumb-[#d4af37]/30">
                       {allUsers
                         .filter(u => (!u.status || u.status === 'active') && u.role !== 'admin')
-                        .filter(u => u.nama.toLowerCase().includes(memberSearchQuery.toLowerCase()) || (u.posisi || '').toLowerCase().includes(memberSearchQuery.toLowerCase()))
+                        .filter(u => 
+                          u.nama.toLowerCase().includes(memberSearchQuery.toLowerCase()) || 
+                          (u.posisi || '').toLowerCase().includes(memberSearchQuery.toLowerCase()) ||
+                          (u.jerseyNumber || '').includes(memberSearchQuery)
+                        )
                         .sort((a, b) => {
                           const aOnline = a.lastActive && currentTime > 0 && (currentTime - a.lastActive < 90000) ? 1 : 0;
                           const bOnline = b.lastActive && currentTime > 0 && (currentTime - b.lastActive < 90000) ? 1 : 0;
@@ -1646,21 +2098,29 @@ export default function Page() {
                         .map((u) => {
                           const isOnline = u.lastActive && currentTime > 0 && (currentTime - u.lastActive < 90000);
                           return (
-                            <div key={u.wa} className="flex items-center justify-between p-3 rounded-xl bg-[#171717] border border-[#262626] hover:border-[#3a3a3a] transition-all">
-                              <div className="flex items-center gap-3">
-                                <div className="relative">
-                                  {u.avatarUrl ? (
-                                    <img src={u.avatarUrl} alt={u.nama} className="w-10 h-10 rounded-full object-cover border border-[#444]" />
-                                  ) : (
-                                    <div className="w-10 h-10 rounded-full bg-[#222] border border-[#444] flex items-center justify-center font-bold text-[#d4af37] text-sm">
-                                      {u.nama.charAt(0).toUpperCase()}
-                                    </div>
-                                  )}
-                                  <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-black ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`}></span>
-                                </div>
+                            <div 
+                              key={u.wa} 
+                              onClick={() => setSelectedMember(u)}
+                              className="flex items-center justify-between p-3 rounded-xl bg-[#171717] hover:bg-[#222] border border-[#262626] hover:border-[#444] transition-all cursor-pointer group"
+                              title="Klik untuk lihat profil lengkap"
+                            >
+                              <div className="flex items-center gap-3 text-left">
+                                <PlayerAvatar user={u} size="md" showOnlineBadge={true} />
                                 <div className="text-left">
                                   <div className="flex items-center gap-2">
-                                    <p className="text-xs font-bold text-white">{u.nama}</p>
+                                    <p className="text-xs font-bold text-white group-hover:text-[#d4af37] transition-colors">{u.nama}</p>
+                                    {u.jerseyNumber && (
+                                      <span 
+                                        className="text-[9px] px-1.5 py-0.2 rounded font-black border"
+                                        style={{
+                                          color: u.themeColor || '#d4af37',
+                                          borderColor: `${u.themeColor || '#d4af37'}40`,
+                                          backgroundColor: `${u.themeColor || '#d4af37'}15`
+                                        }}
+                                      >
+                                        #{u.jerseyNumber}
+                                      </span>
+                                    )}
                                     <span className="text-[9px] bg-[#2a2a2a] text-[#aaa] px-1.5 py-0.2 rounded font-medium">{u.posisi || 'Member'}</span>
                                   </div>
                                   <p className="text-[10px] text-[#777] mt-0.5">
@@ -1675,7 +2135,15 @@ export default function Page() {
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                <button 
+                                  onClick={() => setSelectedMember(u)}
+                                  className="px-2.5 py-1.5 bg-[#333] hover:bg-[#444] text-white rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                                  title="Lihat Profil"
+                                >
+                                  <Eye size={12} />
+                                  <span className="hidden sm:inline">Profil</span>
+                                </button>
                                 <button 
                                   onClick={() => {
                                     setActiveChatTab('chat');
@@ -1683,7 +2151,7 @@ export default function Page() {
                                   }}
                                   className="px-2.5 py-1.5 bg-[#d4af37]/15 hover:bg-[#d4af37] text-[#d4af37] hover:text-black rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
                                 >
-                                  Tag Chat
+                                  Tag
                                 </button>
                                 <button 
                                   onClick={() => window.open(`https://wa.me/${u.wa.replace(/^0/, '62')}`, '_blank')}
@@ -1703,6 +2171,171 @@ export default function Page() {
             )}
           </div>
         </div>
+      </div>
+    )}
+
+      {/* --- POPUP KARTU PROFIL MEMBER (LIHAT PROFIL ANTAR ANGGOTA) --- */}
+      {selectedMember && (
+        <div 
+          className="fixed inset-0 bg-black/75 backdrop-blur-md z-[550] flex justify-center items-center p-4 animate-in fade-in duration-200"
+          onClick={() => setSelectedMember(null)}
+        >
+          <div 
+            className="bg-[#121212] w-full max-w-[360px] rounded-[24px] border overflow-hidden relative shadow-[0_15px_50px_rgba(0,0,0,0.9)] animate-in zoom-in-95 duration-200"
+            style={{ borderColor: selectedMember.themeColor || '#d4af37' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Banner Header with Dynamic Color */}
+            <div 
+              className="h-24 w-full relative flex items-end justify-center p-4"
+              style={{
+                background: `linear-gradient(135deg, ${selectedMember.themeColor || '#d4af37'}33 0%, #121212 100%)`
+              }}
+            >
+              <button 
+                onClick={() => setSelectedMember(null)} 
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center transition-colors cursor-pointer border border-white/10"
+              >
+                <X size={18} />
+              </button>
+
+              {selectedMember.jerseyNumber && (
+                <div 
+                  className="absolute top-3 left-4 px-2.5 py-0.5 rounded-full text-[11px] font-black tracking-wider flex items-center gap-1 shadow-sm"
+                  style={{
+                    backgroundColor: selectedMember.themeColor || '#d4af37',
+                    color: '#000'
+                  }}
+                >
+                  <Shirt size={12} />
+                  <span>#{selectedMember.jerseyNumber}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Avatar & Player Info */}
+            <div className="px-5 pb-6 text-center -mt-12 flex flex-col items-center">
+              <div className="mb-3">
+                <PlayerAvatar 
+                  user={selectedMember} 
+                  size="xl" 
+                  showOnlineBadge={true}
+                />
+              </div>
+
+              <h3 className="text-xl font-black text-white capitalize tracking-wide flex items-center justify-center gap-2">
+                {selectedMember.nama}
+              </h3>
+
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap justify-center">
+                <span 
+                  className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border"
+                  style={{
+                    color: selectedMember.themeColor || '#d4af37',
+                    borderColor: `${selectedMember.themeColor || '#d4af37'}50`,
+                    backgroundColor: `${selectedMember.themeColor || '#d4af37'}15`
+                  }}
+                >
+                  {selectedMember.posisi || 'Member'}
+                </span>
+                <span className="text-[10px] font-mono text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/10">
+                  {selectedMember.id || 'FUTSAR-MEMBER'}
+                </span>
+                {selectedMember.role === 'admin' && (
+                  <span className="bg-[#e53e3e]/20 text-[#e53e3e] border border-[#e53e3e]/40 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">
+                    Admin
+                  </span>
+                )}
+                {selectedMember.avatarBorder && selectedMember.avatarBorder !== 'classic' && (
+                  <span className="bg-[#d4af37]/15 text-[#d4af37] border border-[#d4af37]/30 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase flex items-center gap-1">
+                    <Award size={10} /> {AVATAR_BORDERS.find(b => b.id === selectedMember.avatarBorder)?.name || selectedMember.avatarBorder}
+                  </span>
+                )}
+              </div>
+
+              {/* Bio / Motto */}
+              {selectedMember.bio ? (
+                <div className="mt-4 p-3 rounded-xl bg-white/[0.03] border border-white/5 w-full">
+                  <p className="text-xs italic text-gray-300 leading-relaxed">
+                    &ldquo;{selectedMember.bio}&rdquo;
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-3 text-[11px] text-gray-500 italic">
+                  Belum menuliskan motto pemain.
+                </div>
+              )}
+
+              {/* Status Online & Info Details */}
+              <div className="w-full mt-4 border-t border-white/10 pt-3 space-y-2 text-left">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-400 flex items-center gap-1.5">
+                    <Activity size={13} className="text-gray-500" /> Status Aktivitas
+                  </span>
+                  {selectedMember.lastActive && currentTime > 0 && (currentTime - selectedMember.lastActive < 90000) ? (
+                    <span className="text-emerald-400 font-bold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Online
+                    </span>
+                  ) : (
+                    <span className="text-gray-500">Offline</span>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-400 flex items-center gap-1.5">
+                    <Sparkles size={13} className="text-gray-500" /> Tema Favorit
+                  </span>
+                  <span className="font-semibold capitalize text-gray-300 flex items-center gap-1.5">
+                    <span 
+                      className="w-2.5 h-2.5 rounded-full" 
+                      style={{ backgroundColor: selectedMember.themeColor || '#d4af37' }} 
+                    />
+                    {PROFILE_THEMES.find(t => t.color === selectedMember.themeColor)?.name || 'Gold Champion'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="w-full mt-5 flex flex-col gap-2">
+                {user && user.wa === selectedMember.wa ? (
+                  <button
+                    onClick={() => {
+                      setSelectedMember(null);
+                      setActiveModal('profile');
+                    }}
+                    className="w-full py-2.5 rounded-xl text-black font-black text-xs uppercase tracking-wider transition-transform active:scale-95 shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                    style={{ backgroundColor: selectedMember.themeColor || '#d4af37' }}
+                  >
+                    <Settings size={14} /> Edit Profil Saya
+                  </button>
+                ) : (
+                  <div className="flex gap-2 w-full">
+                    <button
+                      onClick={() => {
+                        const targetName = selectedMember.nama;
+                        setSelectedMember(null);
+                        setActiveModal('community_chat');
+                        setActiveChatTab('chat');
+                        setChatInput(`@${targetName} `);
+                      }}
+                      className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-transform active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer border border-white/10"
+                    >
+                      <MessageSquare size={14} className="text-[#d4af37]" /> Sapa di Chat
+                    </button>
+                    {selectedMember.wa && selectedMember.wa !== 'ADMIN' && (
+                      <button
+                        onClick={() => window.open(`https://wa.me/${selectedMember.wa.replace(/^0/, '62')}`, '_blank')}
+                        className="flex-1 py-2.5 rounded-xl bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-white font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer border border-[#25D366]/40"
+                      >
+                        <MessageCircle size={14} /> WhatsApp
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Global Style for the shake animation */}
@@ -1718,7 +2351,14 @@ export default function Page() {
 
       {/* --- ADMIN DASHBOARD --- */}
       {user && user.role === 'admin' && (
-        <AdminDashboard settings={settings} onUpdateSettings={updateSettings} onLogout={handleLogout} onOpenChat={() => setActiveModal('community_chat')} />
+        <AdminDashboard 
+          settings={settings} 
+          onUpdateSettings={updateSettings} 
+          onLogout={handleLogout} 
+          onOpenChat={() => setActiveModal('community_chat')}
+          onSelectMember={(m) => setSelectedMember(m)}
+          onExportCSV={exportDataToCSV}
+        />
       )}
 
       {selectedGalleryPhoto && (
@@ -1744,7 +2384,21 @@ export default function Page() {
   );
 }
 
-function AdminDashboard({ settings, onUpdateSettings, onLogout, onOpenChat }: { settings: AppSettings, onUpdateSettings: (s: AppSettings) => void, onLogout: () => void, onOpenChat?: () => void }) {
+function AdminDashboard({ 
+  settings, 
+  onUpdateSettings, 
+  onLogout, 
+  onOpenChat,
+  onSelectMember,
+  onExportCSV
+}: { 
+  settings: AppSettings, 
+  onUpdateSettings: (s: AppSettings) => void, 
+  onLogout: () => void, 
+  onOpenChat?: () => void,
+  onSelectMember?: (m: User) => void,
+  onExportCSV?: (users: User[]) => void
+}) {
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
 
@@ -1893,6 +2547,16 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout, onOpenChat }: { 
           <span className="font-black tracking-[4px] text-white text-xl md:text-2xl">ADMIN PANEL</span>
         </div>
         <div className="flex items-center gap-3">
+          {onExportCSV && (
+            <button 
+              onClick={() => onExportCSV([...activeUsers, ...pendingUsers])}
+              className="px-3.5 py-2 bg-[#27ae60]/15 hover:bg-[#27ae60] text-[#27ae60] hover:text-white border border-[#27ae60]/40 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 cursor-pointer"
+              title="Unduh data seluruh member & status kas dalam format CSV"
+            >
+              <Download size={16} />
+              <span className="hidden sm:inline">Ekspor Data CSV</span>
+            </button>
+          )}
           {onOpenChat && (
             <button 
               onClick={onOpenChat}
@@ -2058,11 +2722,25 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout, onOpenChat }: { 
               ) : (
                 pendingUsers.map((u) => (
                   <div key={u.wa} className="flex flex-col md:flex-row justify-between items-start md:items-center bg-[#1a1a1a]/60 backdrop-blur-sm p-4 rounded-lg border-l-4 border-[#3498db] gap-4">
-                    <div className="text-left">
-                      <p className="text-sm font-bold text-white mb-1 uppercase tracking-wide">{u.nama} <span className="text-[10px] text-[#3498db] ml-2">({u.id})</span></p>
+                    <div 
+                      className="text-left flex-1 cursor-pointer"
+                      onClick={() => onSelectMember && onSelectMember(u)}
+                      title="Klik untuk lihat profil"
+                    >
+                      <p className="text-sm font-bold text-white mb-1 uppercase tracking-wide hover:text-[#3498db] transition-colors">
+                        {u.nama} <span className="text-[10px] text-[#3498db] ml-2">({u.id})</span>
+                      </p>
                       <p className="text-[11px] text-[#aaa] m-0">No WA: {u.wa} • Posisi: {u.posisi}</p>
                     </div>
                     <div className="flex gap-2 w-full md:w-auto shrink-0">
+                      {onSelectMember && (
+                        <button 
+                          onClick={() => onSelectMember(u)} 
+                          className="px-3 py-2 bg-white/10 text-white hover:bg-white/20 rounded-lg text-[10px] font-bold uppercase transition-colors"
+                        >
+                          Profil
+                        </button>
+                      )}
                       <button onClick={() => handleApprove(u.wa)} className="flex-1 md:flex-none px-4 py-2 bg-[#27ae60]/10 text-[#27ae60] hover:bg-[#27ae60] hover:text-white border border-[#27ae60] rounded-lg text-[10px] font-bold uppercase transition-colors text-center">
                         Setujui
                       </button>
@@ -2077,19 +2755,48 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout, onOpenChat }: { 
           </div>
 
           <div className="bg-[#111]/60 backdrop-blur-md border border-[#333] p-6 rounded-2xl">
-            <h3 className="text-[#27ae60] font-black text-xl mb-4 uppercase tracking-widest">Manajemen Uang Kas</h3>
-            <p className="text-xs text-[#888] mb-5">Konfirmasi pembayaran anggota yang aktif.</p>
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-[#27ae60] font-black text-xl uppercase tracking-widest">Manajemen Uang Kas</h3>
+                <p className="text-xs text-[#888] mt-0.5">Konfirmasi pembayaran anggota yang aktif.</p>
+              </div>
+              {onExportCSV && (
+                <button 
+                  onClick={() => onExportCSV(activeUsers)}
+                  className="px-3 py-1.5 bg-[#27ae60]/20 hover:bg-[#27ae60] text-[#27ae60] hover:text-white border border-[#27ae60]/40 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                  title="Ekspor Data Kas"
+                >
+                  <Download size={13} /> Ekspor Kas
+                </button>
+              )}
+            </div>
             <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#27ae60] pr-2">
               {activeUsers.length === 0 ? (
                 <p className="text-xs text-[#888] italic">Belum ada anggota yang aktif.</p>
               ) : (
                 activeUsers.map((u) => (
                   <div key={u.wa} className={`flex flex-col md:flex-row justify-between items-start md:items-center bg-[#1a1a1a]/60 backdrop-blur-sm p-4 rounded-lg border-l-4 ${u.isPaid ? 'border-[#27ae60]' : 'border-[#ff4d4d]'} gap-4`}>
-                    <div className="text-left">
-                      <p className="text-sm font-bold text-white mb-1 uppercase tracking-wide">{u.nama} <span className="text-[10px] text-[#aaa] ml-2">({u.id})</span></p>
+                    <div 
+                      className="text-left flex-1 cursor-pointer"
+                      onClick={() => onSelectMember && onSelectMember(u)}
+                      title="Klik untuk lihat profil"
+                    >
+                      <p className="text-sm font-bold text-white mb-1 uppercase tracking-wide hover:text-[#d4af37] transition-colors flex items-center gap-2">
+                        {u.nama} 
+                        {u.jerseyNumber && <span className="text-[10px] text-[#888]">#{u.jerseyNumber}</span>}
+                        <span className="text-[10px] text-[#aaa] ml-1">({u.id})</span>
+                      </p>
                       <p className="text-[11px] text-[#aaa] m-0">No WA: {u.wa} • {settings.activePaymentCycle === 'bulanan' ? 'Bulanan' : 'Mingguan'}</p>
                     </div>
                     <div className="flex gap-2 w-full md:w-auto shrink-0">
+                      {onSelectMember && (
+                        <button 
+                          onClick={() => onSelectMember(u)}
+                          className="px-3 py-2 bg-white/10 text-white hover:bg-white/20 rounded-lg text-[10px] font-bold uppercase transition-colors"
+                        >
+                          Profil
+                        </button>
+                      )}
                       <button 
                         onClick={() => handleTogglePayment(u.wa, !!u.isPaid)} 
                         className={`flex-1 md:flex-none px-4 py-2 border rounded-lg text-[10px] font-bold uppercase transition-colors text-center ${u.isPaid ? 'bg-[#ff4d4d]/10 text-[#ff4d4d] hover:bg-[#ff4d4d] hover:text-white border-[#ff4d4d]' : 'bg-[#27ae60]/10 text-[#27ae60] hover:bg-[#27ae60] hover:text-white border-[#27ae60]'}`}
@@ -2104,8 +2811,21 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout, onOpenChat }: { 
           </div>
 
           <div className="bg-[#111]/60 backdrop-blur-md border border-[#333] p-6 rounded-2xl">
-            <h3 className="text-[#9b59b6] font-black text-xl mb-4 uppercase tracking-widest">Manajemen Akun Terdaftar</h3>
-            <p className="text-xs text-[#888] mb-5">Daftar semua anggota aktif. Hapus akun jika melanggar.</p>
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-[#9b59b6] font-black text-xl uppercase tracking-widest">Manajemen Akun Terdaftar</h3>
+                <p className="text-xs text-[#888] mt-0.5">Daftar semua anggota aktif. Hapus akun jika melanggar.</p>
+              </div>
+              {onExportCSV && (
+                <button 
+                  onClick={() => onExportCSV(activeUsers)}
+                  className="px-3 py-1.5 bg-[#9b59b6]/20 hover:bg-[#9b59b6] text-[#9b59b6] hover:text-white border border-[#9b59b6]/40 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                  title="Ekspor Data Anggota"
+                >
+                  <Download size={13} /> Ekspor Anggota
+                </button>
+              )}
+            </div>
             <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#9b59b6] pr-2">
               {activeUsers.length === 0 ? (
                 <p className="text-xs text-[#888] italic">Belum ada anggota yang aktif.</p>
@@ -2115,28 +2835,43 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout, onOpenChat }: { 
                   const isOnline = u.lastActive && (now - u.lastActive < 60000); // 1 menit
                   return (
                     <div key={u.wa} className="flex justify-between items-center bg-[#1a1a1a]/60 backdrop-blur-sm p-4 rounded-lg border-l-4 border-[#9b59b6] gap-4">
-                      <div className="text-left flex-1">
+                      <div 
+                        className="text-left flex-1 cursor-pointer"
+                        onClick={() => onSelectMember && onSelectMember(u)}
+                        title="Klik untuk lihat kartu profil"
+                      >
                         <div className="flex items-center gap-2 mb-1">
-                          <p className="text-sm font-bold text-white uppercase tracking-wide">{u.nama}</p>
+                          <p className="text-sm font-bold text-white uppercase tracking-wide hover:text-[#9b59b6] transition-colors">{u.nama}</p>
                           <span 
                             className="flex items-center justify-center w-2.5 h-2.5 rounded-full" 
                             style={{ backgroundColor: isOnline ? '#27ae60' : '#e53e3e', boxShadow: isOnline ? '0 0 8px rgba(39,174,96,0.5)' : 'none' }}
                             title={isOnline ? "Online" : "Offline"}
                           ></span>
+                          {u.jerseyNumber && <span className="text-[10px] text-[#888]">#{u.jerseyNumber}</span>}
                         </div>
                         <p className="text-[11px] text-[#aaa] m-0">No WA: {u.wa} • Sandi: {u.password || '-'}</p>
                       </div>
-                      <button 
-                        onClick={() => {
-                          if (confirm(`Yakin ingin menghapus akun ${u.nama}?`)) {
-                            deleteDoc(doc(db, "users", u.wa));
-                          }
-                        }}
-                        className="text-[#e53e3e] hover:text-white transition-colors"
-                        title="Hapus Akun"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {onSelectMember && (
+                          <button 
+                            onClick={() => onSelectMember(u)}
+                            className="px-2.5 py-1.5 bg-white/10 text-white hover:bg-white/20 rounded-lg text-[10px] font-bold uppercase transition-colors"
+                          >
+                            Profil
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => {
+                            if (confirm(`Yakin ingin menghapus akun ${u.nama}?`)) {
+                              deleteDoc(doc(db, "users", u.wa));
+                            }
+                          }}
+                          className="text-[#e53e3e] hover:text-white transition-colors p-1.5 rounded"
+                          title="Hapus Akun"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                   );
                 })

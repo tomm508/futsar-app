@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "description": "",
+  "name": "Futsar Club Manager",
+  "description": "Aplikasi manajemen klub futsal dengan fitur profil member, tema kustom, avatar border, ruang obrolan komunitas, manajemen kas QRIS, dan jadwal pertandingan.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

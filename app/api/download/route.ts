@@ -13,8 +13,8 @@ export async function GET() {
 
   return new NextResponse(fileBuffer, {
     headers: {
-      'Content-Type': 'application/zip',
       'Content-Disposition': 'attachment; filename="futsar-app.zip"',
+      'Content-Type': 'application/zip',
       'Content-Length': fileBuffer.length.toString(),
     },
   });
