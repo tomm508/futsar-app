@@ -1,5 +1,4 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,73 +6,3 @@
 body {
   font-family: 'Montserrat', sans-serif;
 }
-
-@keyframes gemini-aurora-spin {
-  0% {
-    transform: rotate(0deg) scale(1);
-  }
-  50% {
-    transform: rotate(180deg) scale(1.15);
-  }
-  100% {
-    transform: rotate(360deg) scale(1);
-  }
-}
-
-@keyframes gemini-float-1 {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
-    opacity: 0.65;
-  }
-  33% {
-    transform: translate(25px, -30px) scale(1.18);
-    opacity: 0.85;
-  }
-  66% {
-    transform: translate(-20px, 20px) scale(0.92);
-    opacity: 0.55;
-  }
-}
-
-@keyframes gemini-float-2 {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
-    opacity: 0.6;
-  }
-  33% {
-    transform: translate(-30px, 20px) scale(1.15);
-    opacity: 0.8;
-  }
-  66% {
-    transform: translate(20px, -25px) scale(0.88);
-    opacity: 0.5;
-  }
-}
-
-@keyframes gemini-pulse-glow {
-  0%, 100% {
-    opacity: 0.5;
-    transform: scale(0.95);
-  }
-  50% {
-    opacity: 0.85;
-    transform: scale(1.1);
-  }
-}
-
-.animate-gemini-spin {
-  animation: gemini-aurora-spin 14s linear infinite;
-}
-
-.animate-gemini-float-1 {
-  animation: gemini-float-1 9s ease-in-out infinite;
-}
-
-.animate-gemini-float-2 {
-  animation: gemini-float-2 11s ease-in-out infinite;
-}
-
-.animate-gemini-pulse {
-  animation: gemini-pulse-glow 7s ease-in-out infinite;
-}
-

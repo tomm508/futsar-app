@@ -221,6 +221,26 @@ function GeminiEdgeAurora({ intensity = 'normal' }: { intensity?: 'subtle' | 'no
   );
 }
 
+
+function GeminiScreenAurora({ intensity = 'subtle' }: { intensity?: 'subtle' | 'normal' | 'vibrant' }) {
+  const opacityClass = intensity === 'subtle' ? 'opacity-30' : intensity === 'vibrant' ? 'opacity-60' : 'opacity-40';
+  return (
+    <div className={`fixed inset-0 pointer-events-none overflow-hidden z-0 ${opacityClass}`}>
+      {/* Top Left */}
+      <div className="absolute -top-[10%] -left-[10%] w-[40vw] h-[40vw] rounded-full bg-gradient-to-br from-[#4285f4] via-[#2b71f0] to-[#00f2fe] blur-[80px] animate-gemini-float-1" />
+      
+      {/* Top Right */}
+      <div className="absolute -top-[10%] -right-[10%] w-[45vw] h-[45vw] rounded-full bg-gradient-to-bl from-[#9b51e0] via-[#d946ef] to-[#7928ca] blur-[90px] animate-gemini-float-2" />
+      
+      {/* Bottom Left */}
+      <div className="absolute -bottom-[10%] -left-[10%] w-[40vw] h-[40vw] rounded-full bg-gradient-to-tr from-[#00f2fe] via-[#06b6d4] to-[#10b981] blur-[80px] animate-gemini-float-2" />
+      
+      {/* Bottom Right */}
+      <div className="absolute -bottom-[10%] -right-[10%] w-[40vw] h-[40vw] rounded-full bg-gradient-to-tl from-[#ffd700] via-[#f59e0b] to-[#9b51e0] blur-[80px] animate-gemini-float-1" />
+    </div>
+  );
+}
+
 function GeminiCenterNebula({ className = '' }: { className?: string }) {
   return (
     <div className={`absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center z-0 select-none ${className}`}>
@@ -845,7 +865,7 @@ export default function Page() {
           {/* Centered Content Card with Gemini Animated Neon Aurora Edge Lights */}
           <div className="relative my-auto w-full max-w-[380px] flex items-center justify-center">
             {/* Ambient Gemini Neon Aurora at each edge/corner */}
-            <GeminiEdgeAurora intensity="normal" />
+            
 
             <div className="relative z-20 text-center w-full py-8 px-6 bg-black/60 backdrop-blur-xl border border-[#d4af37]/40 rounded-3xl shadow-[0_15px_50px_rgba(0,0,0,0.85)]">
               <div className="text-[13px] font-bold tracking-[3px] mb-1 uppercase text-[#ddd]">
@@ -919,7 +939,8 @@ export default function Page() {
 
       {/* --- LOGGED IN: DASHBOARD (ACTIVE) --- */}
       {user && user.role !== 'admin' && (!user.status || user.status === 'active') && (
-        <div className="w-full min-h-screen flex flex-col z-10 animate-in fade-in duration-500">
+        <div className="w-full min-h-screen flex flex-col z-10 animate-in fade-in duration-500 relative">
+          <GeminiScreenAurora intensity="subtle" />
           {/* Header / Nav (Immersive UI Style) */}
           <nav className="z-20 px-4 md:px-8 py-4 flex justify-between items-center bg-black/40 backdrop-blur-md border-b border-[#d4af37]/20 relative">
             <div className="flex items-center gap-3">
