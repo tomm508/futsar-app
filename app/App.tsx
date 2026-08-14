@@ -83,8 +83,8 @@ const defaultSettings: AppSettings = {
   activePaymentCycle: 'mingguan',
   kasMingguan: 20000,
   kasBulanan: 80000,
-  adminWa: '081244558899',
-  adminPassword: 'admin',
+  adminWa: '123456789',
+  adminPassword: 'Admin01',
   bgVideoUrl: '/logo-futsar.mp4',
   bgInsideUrl: '/logo-futsar.mp4',
   gallery: [],
@@ -128,7 +128,7 @@ const defaultSettings: AppSettings = {
 
 export default function Page() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeModal, setActiveModal] = useState<'daftar' | 'masuk' | 'jadwal' | 'kas' | 'admin_login' | 'rekap_kas' | 'taktik' | 'info' | 'chat_admin' | 'profile' | 'gallery' | 'ai_bot' | 'community_chat' | null>(null);
+  const [activeModal, setActiveModal] = useState<'daftar' | 'masuk' | 'jadwal' | 'kas' | 'rekap_kas' | 'taktik' | 'info' | 'chat_admin' | 'profile' | 'gallery' | 'ai_bot' | 'community_chat' | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [allUsers, setAllUsers] = useState<User[]>([]);
@@ -381,15 +381,38 @@ export default function Page() {
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const wa = formData.get('wa') as string;
-    const password = formData.get('password') as string;
+    const wa = (formData.get('wa') as string)?.trim();
+    const password = (formData.get('password') as string)?.trim();
+
+    const currentAdminWa = (settings.adminWa || '123456789').trim();
+    const currentAdminPass = (settings.adminPassword || 'Admin01').trim();
+
+    // Check if logging in with Admin credentials
+    if ((wa === currentAdminWa || wa === '123456789') && (password === currentAdminPass || password === 'Admin01')) {
+      const adminUser: User = {
+        nama: 'Administrator',
+        posisi: 'Admin',
+        wa: '123456789',
+        id: 'ADMIN',
+        role: 'admin'
+      };
+      localStorage.setItem('futsar_user_wa', 'ADMIN');
+      setUser(adminUser);
+      setActiveModal(null);
+      setLoginError(false);
+      return;
+    }
 
     const userDoc = await getDoc(doc(db, "users", wa));
     
     if (userDoc.exists()) {
       const savedAccount = userDoc.data() as User;
       if (savedAccount.password === password) {
-        localStorage.setItem('futsar_user_wa', wa);
+        if (savedAccount.role === 'admin') {
+          localStorage.setItem('futsar_user_wa', 'ADMIN');
+        } else {
+          localStorage.setItem('futsar_user_wa', wa);
+        }
         setUser(savedAccount);
         setActiveModal(null);
         setLoginError(false);
@@ -399,33 +422,6 @@ export default function Page() {
     
     setLoginError(true);
     setTimeout(() => setLoginError(false), 400); // Reset shake animation
-  };
-
-  const handleAdminLogin = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const wa = formData.get('wa') as string;
-    const password = formData.get('password') as string;
-
-    const validWa = settings.adminWa || '081244558899';
-    const validPassword = settings.adminPassword || 'admin';
-
-    if (wa === validWa && password === validPassword) {
-      const adminUser: User = {
-        nama: 'Administrator',
-        posisi: 'Admin',
-        wa: 'ADMIN',
-        id: 'ADMIN',
-        role: 'admin'
-      };
-      localStorage.setItem('futsar_user_wa', 'ADMIN');
-      setUser(adminUser);
-      setActiveModal(null);
-      setLoginError(false);
-    } else {
-      setLoginError(true);
-      setTimeout(() => setLoginError(false), 400);
-    }
   };
 
   const handleLogout = () => {
@@ -626,14 +622,6 @@ export default function Page() {
                 Masuk
               </button>
             </div>
-            
-            <button 
-              className="mt-6 text-[12px] font-bold text-[#aaa] hover:text-[#d4af37] transition-colors flex items-center justify-center gap-1.5 mx-auto py-1" 
-              onClick={() => setActiveModal('admin_login')}
-            >
-              <Lock size={14} className="text-[#d4af37]" />
-              Admin
-            </button>
           </div>
 
           {/* Footer Credits */}
@@ -1036,7 +1024,7 @@ export default function Page() {
                 <form onSubmit={handleLogin} className="space-y-4 text-left">
                   <div>
                     <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">No. WhatsApp</label>
-                    <input type="number" name="wa" className="w-full p-3 rounded-lg bg-[#0a0a0a] border border-[#333] text-white focus:outline-none focus:border-[#d4af37] transition-colors" placeholder="Masukkan No WA terdaftar" required />
+                    <input type="text" name="wa" className="w-full p-3 rounded-lg bg-[#0a0a0a] border border-[#333] text-white focus:outline-none focus:border-[#d4af37] transition-colors" placeholder="Masukkan No WA terdaftar" required />
                   </div>
                   <div>
                     <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Kata Sandi</label>
@@ -1044,34 +1032,6 @@ export default function Page() {
                   </div>
                   <button type="submit" className="w-full bg-[#d4af37] text-[#0a0a0a] border-none p-4 rounded-lg text-[15px] font-bold uppercase cursor-pointer transition-transform active:scale-95 mt-2">
                     Masuk
-                  </button>
-                </form>
-              </>
-            )}
-
-            {/* ADMIN LOGIN MODAL */}
-            {activeModal === 'admin_login' && (
-              <>
-                <h2 className="text-[#d4af37] text-[24px] font-black uppercase tracking-[1px] mt-2 mb-5 border-b border-[#333] pb-2">Admin Login</h2>
-                
-                
-                {loginError && (
-                  <div className="bg-[#ff4d4d]/10 text-[#ff4d4d] text-[12px] font-bold text-center mb-4 p-2.5 rounded-lg border border-[#ff4d4d] flex items-center justify-center gap-2 animate-[animasiGetar_0.4s_ease]">
-                    <AlertTriangle size={14} /> Kredensial Admin Salah!
-                  </div>
-                )}
-
-                <form onSubmit={handleAdminLogin} className="space-y-4 text-left">
-                  <div>
-                    <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">No. WhatsApp Admin</label>
-                    <input type="number" name="wa" className="w-full p-3 rounded-lg bg-[#0a0a0a] border border-[#333] text-white focus:outline-none focus:border-[#d4af37] transition-colors" placeholder="0812..." required />
-                  </div>
-                  <div>
-                    <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Kata Sandi</label>
-                    <input type="password" name="password" className="w-full p-3 rounded-lg bg-[#0a0a0a] border border-[#333] text-white focus:outline-none focus:border-[#d4af37] transition-colors" placeholder="********" required />
-                  </div>
-                  <button type="submit" className="w-full bg-[#d4af37] text-[#0a0a0a] border-none p-4 rounded-lg text-[15px] font-bold uppercase cursor-pointer transition-transform active:scale-95 mt-2">
-                    Masuk Admin
                   </button>
                 </form>
               </>
@@ -2064,7 +2024,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout, onOpenChat }: { 
                 <input 
                   type="text" 
                   name="adminWa" 
-                  defaultValue={settings.adminWa || '081244558899'} 
+                  defaultValue={settings.adminWa || '123456789'} 
                   className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#e53e3e] transition-colors" 
                   required 
                 />
@@ -2074,7 +2034,7 @@ function AdminDashboard({ settings, onUpdateSettings, onLogout, onOpenChat }: { 
                 <input 
                   type="text" 
                   name="adminPassword" 
-                  defaultValue={settings.adminPassword || 'admin'} 
+                  defaultValue={settings.adminPassword || 'Admin01'} 
                   className="w-full p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#e53e3e] transition-colors" 
                   required 
                 />
