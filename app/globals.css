@@ -6,3 +6,67 @@
 body {
   font-family: 'Montserrat', sans-serif;
 }
+
+@keyframes cloud-float {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.05) rotate(4deg); }
+}
+
+@keyframes lightning-flash {
+  0%, 100% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+@keyframes susanoo-flame {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(168,85,247,0.8)); }
+  50% { transform: scale(1.06); filter: drop-shadow(0 0 16px rgba(192,132,252,1)); }
+}
+
+@keyframes sharingan-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes dragon-orbit {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes celestial-pulse {
+  0%, 100% { transform: scale(0.98); opacity: 0.8; }
+  50% { transform: scale(1.04); opacity: 1; }
+}
+
+@keyframes cosmic-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-cloud-float {
+  animation: cloud-float 4s ease-in-out infinite;
+}
+
+.animate-lightning-flash {
+  animation: lightning-flash 1.5s ease-in-out infinite;
+}
+
+.animate-susanoo-flame {
+  animation: susanoo-flame 3s ease-in-out infinite;
+}
+
+.animate-sharingan-spin {
+  animation: sharingan-spin 12s linear infinite;
+}
+
+.animate-dragon-orbit {
+  animation: dragon-orbit 20s linear infinite;
+}
+
+.animate-celestial-pulse {
+  animation: celestial-pulse 2.5s ease-in-out infinite;
+}
+
+.animate-cosmic-spin {
+  animation: cosmic-spin 16s linear infinite;
+}
+

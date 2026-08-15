@@ -11,7 +11,7 @@ import {
   Users, Info, FileText, CheckCircle, XCircle, Camera, Edit2, UserCircle, Image as ImageIcon, Trash2, Plus,
   Lock, ShieldCheck, Bot, Send, MessageSquare, MessagesSquare, CheckCheck, Smile, Radio,
   Download, Palette, Sparkles, ExternalLink, Eye, Award, Shield, Activity, Settings,
-  Flame, Zap, Crown
+  Flame, Zap, Crown, Gift, Ticket
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -26,14 +26,12 @@ const PROFILE_THEMES = [
 ];
 
 const AVATAR_BORDERS = [
-  { id: 'classic', name: 'Solid Klasik', icon: Shield, desc: 'Ring solid tegas selaras warna tema' },
-  { id: 'glow', name: 'Neon Aura', icon: Sparkles, desc: 'Pendaran aura neon bercahaya' },
-  { id: 'champion', name: 'Gold Champion', icon: Award, desc: 'Ring ganda mahkota emas sang juara' },
-  { id: 'fire', name: 'Inferno Flame', icon: Flame, desc: 'Gradasi bara api membara' },
-  { id: 'lightning', name: 'Electric Storm', icon: Zap, desc: 'Kilatan petir cyber berenergi' },
-  { id: 'cyber', name: 'Tactical Matrix', icon: Radio, desc: 'Garis putus-putus tactical futuristik' },
-  { id: 'captain', name: 'Captain Crest', icon: ShieldCheck, desc: 'Lencana ban kapten bertabur bintang' },
-  { id: 'prism', name: 'Holo Spectrum', icon: Palette, desc: 'Spektrum pelangi hologram mengkilap' },
+  { id: 'classic', name: 'Solid Klasik', price: 0, category: 'Basic', desc: 'Ring solid tegas selaras warna tema' },
+  { id: 'nika', name: 'Nika', price: 25000, category: 'One Piece Series', desc: 'Aura kebebasan sang dewa matahari' },
+  { id: 'sasuke', name: 'Sasuke', price: 15000, category: 'Naruto Series', desc: 'Cakra ungu dengan mata kutukan' },
+  { id: 'dragon', name: 'White Chinese Dragon', price: 15000, category: 'Dragon Series', desc: 'Naga putih bersinar' },
+  { id: 'wanglin', name: 'Wang Lin', price: 15000, category: 'Renegade Series', desc: 'Aura spiritual kuno' },
+  { id: 'wanglin2', name: 'Wang Lin II', price: 25000, category: 'Renegade Series', desc: 'Evolusi aura spiritual tingkat dewa' },
 ];
 
 type ChatMessage = {
@@ -67,6 +65,8 @@ type User = {
   bio?: string;
   themeColor?: string;
   avatarBorder?: string;
+  points?: number;
+  ownedBorders?: string[];
   joinedDate?: string;
 };
 
@@ -114,20 +114,16 @@ function PlayerAvatar({
 
   const getFrameClasses = () => {
     switch (borderStyle) {
-      case 'glow':
-        return 'p-[2px] rounded-full border-2 transition-all duration-300';
-      case 'champion':
-        return 'p-[2.5px] rounded-full bg-gradient-to-tr from-[#ffe066] via-[#d4af37] to-[#996515] shadow-[0_0_12px_rgba(212,175,55,0.5)] ring-1 ring-[#ffe066]/40';
-      case 'fire':
-        return 'p-[2.5px] rounded-full bg-gradient-to-tr from-amber-500 via-red-500 to-rose-600 shadow-[0_0_12px_rgba(239,68,68,0.5)]';
-      case 'lightning':
-        return 'p-[2.5px] rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 shadow-[0_0_12px_rgba(6,182,212,0.6)] animate-pulse';
-      case 'cyber':
-        return 'p-[2px] rounded-full border-2 border-dashed border-cyan-400/80 shadow-[0_0_8px_rgba(6,182,212,0.3)]';
-      case 'captain':
-        return 'p-[2.5px] rounded-full border-2 border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.4)]';
-      case 'prism':
-        return 'p-[2.5px] rounded-full bg-gradient-to-tr from-purple-500 via-pink-500 via-yellow-400 to-cyan-400 shadow-[0_0_12px_rgba(236,72,153,0.4)]';
+      case 'nika':
+        return 'p-[3px] rounded-full bg-gradient-to-tr from-white via-cyan-100 to-amber-100 shadow-[0_0_16px_rgba(255,255,255,0.95),0_0_28px_rgba(186,230,253,0.7)] animate-cloud-float';
+      case 'sasuke':
+        return 'p-[3px] rounded-full bg-gradient-to-tr from-purple-950 via-purple-600 to-indigo-950 shadow-[0_0_16px_rgba(168,85,247,0.85),0_0_26px_rgba(126,34,206,0.6)] ring-1 ring-purple-400/60 animate-susanoo-flame';
+      case 'dragon':
+        return 'p-[3px] rounded-full bg-gradient-to-tr from-amber-400 via-yellow-100 to-amber-600 shadow-[0_0_16px_rgba(245,158,11,0.85),0_0_28px_rgba(251,191,36,0.6)] animate-dragon-orbit';
+      case 'wanglin':
+        return 'p-[3px] rounded-full bg-gradient-to-br from-red-800 via-amber-500 to-red-600 shadow-[0_0_16px_rgba(239,68,68,0.85),0_0_28px_rgba(217,119,6,0.5)] animate-celestial-pulse';
+      case 'wanglin2':
+        return 'p-[4px] rounded-full bg-gradient-to-r from-slate-950 via-blue-900 to-purple-950 shadow-[0_0_20px_rgba(59,130,246,0.9),0_0_35px_rgba(147,51,234,0.6)] ring-2 ring-cyan-400/50 animate-cosmic-spin';
       case 'classic':
       default:
         return 'p-[2px] rounded-full border-2';
@@ -135,13 +131,7 @@ function PlayerAvatar({
   };
 
   const getFrameStyles = () => {
-    if (borderStyle === 'glow') {
-      return {
-        borderColor: theme,
-        boxShadow: `0 0 14px ${theme}99, inset 0 0 6px ${theme}66`
-      };
-    }
-    if (borderStyle === 'classic') {
+    if (borderStyle === 'classic' || !AVATAR_BORDERS.find(b => b.id === borderStyle)) {
       return {
         borderColor: theme,
         boxShadow: `0 2px 8px ${theme}33`
@@ -157,10 +147,10 @@ function PlayerAvatar({
       title={title}
     >
       <div 
-        className={`${getFrameClasses()} ${sizeStyles.wrapper} flex items-center justify-center`}
+        className={`${getFrameClasses()} ${sizeStyles.wrapper} flex items-center justify-center relative`}
         style={getFrameStyles()}
       >
-        <div className={`${sizeStyles.inner} rounded-full overflow-hidden bg-[#161616] flex items-center justify-center relative shadow-inner`}>
+        <div className={`${sizeStyles.inner} rounded-full overflow-hidden bg-[#161616] flex items-center justify-center relative shadow-inner z-10`}>
           {avatarUrl ? (
             <img src={avatarUrl} alt={nama} className="w-full h-full object-cover" />
           ) : (
@@ -173,15 +163,80 @@ function PlayerAvatar({
           )}
         </div>
 
+        {/* Nika Series Embellishments */}
+        {!isSmall && borderStyle === 'nika' && (
+          <>
+            <span className="absolute -bottom-1 -left-1.5 z-20 flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]" title="Sun God Nika Straw Hat">
+              <svg viewBox="0 0 24 24" className="w-5 h-5">
+                <ellipse cx="12" cy="15" rx="10" ry="3.5" fill="#eab308" stroke="#a16207" strokeWidth="1" />
+                <path d="M7 14 C7 8 17 8 17 14 Z" fill="#facc15" stroke="#a16207" strokeWidth="1" />
+                <rect x="7" y="12.5" width="10" height="2" fill="#ef4444" rx="0.5" />
+              </svg>
+            </span>
+            <span className="absolute -top-1 -right-1 z-20 text-[11px] text-amber-300 animate-lightning-flash drop-shadow-[0_0_6px_rgba(251,191,36,0.9)] font-black" title="Nika Lightning">
+              ⚡
+            </span>
+          </>
+        )}
+
+        {/* Sasuke Series Embellishments */}
+        {!isSmall && borderStyle === 'sasuke' && (
+          <>
+            <span className="absolute -top-2 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center pointer-events-none" title="Susanoo Crest">
+              <svg viewBox="0 0 24 12" className="w-6 h-3 text-purple-400 filter drop-shadow-[0_0_6px_rgba(192,132,252,0.9)]">
+                <path d="M2 12 L8 2 L12 7 L16 2 L22 12 Z" fill="currentColor" />
+              </svg>
+            </span>
+            <span className="absolute -bottom-1 -right-1 z-20 w-4 h-4 rounded-full bg-red-600 border border-black flex items-center justify-center animate-sharingan-spin shadow-[0_0_8px_rgba(239,68,68,0.9)]" title="Sharingan Tomoe">
+              <svg viewBox="0 0 20 20" className="w-3 h-3 text-black">
+                <circle cx="10" cy="10" r="2" fill="black" />
+                <circle cx="10" cy="5" r="1.5" fill="black" />
+                <circle cx="6" cy="13" r="1.5" fill="black" />
+                <circle cx="14" cy="13" r="1.5" fill="black" />
+              </svg>
+            </span>
+          </>
+        )}
+
+        {/* Dragon Series Embellishments */}
+        {!isSmall && borderStyle === 'dragon' && (
+          <>
+            <span className="absolute -top-1.5 -right-1.5 z-20 text-[13px] drop-shadow-[0_0_8px_rgba(245,158,11,0.9)]" title="White Dragon Head">
+              🐉
+            </span>
+            <span className="absolute -bottom-1 -left-1 z-20 w-3 h-3 rounded-full bg-gradient-to-tr from-amber-200 to-white shadow-[0_0_6px_rgba(255,255,255,0.9)] border border-amber-400" title="Dragon Pearl" />
+          </>
+        )}
+
+        {/* Wang Lin Series Embellishments */}
+        {!isSmall && borderStyle === 'wanglin' && (
+          <>
+            <span className="absolute -top-1.5 -left-1.5 z-20 text-[12px] drop-shadow-[0_0_8px_rgba(239,68,68,0.9)]" title="Ancient Slaughter Essence">
+              🔥
+            </span>
+            <span className="absolute -bottom-1 -right-1 z-20 w-3 h-3 rotate-45 bg-gradient-to-tr from-red-600 to-amber-400 border border-amber-300 shadow-[0_0_6px_rgba(239,68,68,0.9)]" title="Slaughter Domain" />
+          </>
+        )}
+
+        {/* Wang Lin II Cosmic Embellishments */}
+        {!isSmall && borderStyle === 'wanglin2' && (
+          <>
+            <span className="absolute -top-1.5 -right-1.5 z-20 text-[12px] text-cyan-300 drop-shadow-[0_0_8px_rgba(6,182,212,0.9)] font-black" title="Cosmic Void Domain">
+              ✨
+            </span>
+            <span className="absolute -bottom-1 -left-1 z-20 w-3.5 h-3.5 rounded-full bg-gradient-to-tr from-cyan-400 via-blue-600 to-purple-600 shadow-[0_0_8px_rgba(6,182,212,0.9)] border border-white" title="Divine Core" />
+          </>
+        )}
+
         {/* Mini Badges for Champion & Captain styles */}
         {!isSmall && borderStyle === 'champion' && (
-          <span className="absolute -top-1 -right-1 text-[9px] bg-[#ffd700] text-black rounded-full w-4 h-4 flex items-center justify-center font-black shadow-md border border-black" title="Champion">
+          <span className="absolute -top-1 -right-1 text-[9px] bg-[#ffd700] text-black rounded-full w-4 h-4 flex items-center justify-center font-black shadow-md border border-black z-20" title="Champion">
             ★
           </span>
         )}
         {!isSmall && borderStyle === 'captain' && (
           <span 
-            className="absolute -bottom-1 -left-1 text-[8px] font-black text-black px-1 py-0.2 rounded-sm shadow-md border border-black bg-amber-400"
+            className="absolute -bottom-1 -left-1 text-[8px] font-black text-black px-1 py-0.2 rounded-sm shadow-md border border-black bg-amber-400 z-20"
             title="Captain"
           >
             C
@@ -191,7 +246,7 @@ function PlayerAvatar({
 
       {isOnline && (
         <span 
-          className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-black animate-pulse" 
+          className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-black animate-pulse z-30" 
           title="Online sekarang"
         />
       )}
@@ -347,7 +402,7 @@ const defaultSettings: AppSettings = {
 
 export default function Page() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeModal, setActiveModal] = useState<'daftar' | 'masuk' | 'jadwal' | 'kas' | 'rekap_kas' | 'taktik' | 'info' | 'chat_admin' | 'profile' | 'gallery' | 'ai_bot' | 'community_chat' | null>(null);
+  const [activeModal, setActiveModal] = useState<'daftar' | 'masuk' | 'jadwal' | 'kas' | 'rekap_kas' | 'taktik' | 'info' | 'chat_admin' | 'profile' | 'gallery' | 'ai_bot' | 'community_chat' | 'deco' | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [allUsers, setAllUsers] = useState<User[]>([]);
@@ -420,6 +475,211 @@ export default function Page() {
     }
   }, [communityMessages, activeModal, activeChatTab]);
   
+
+  // Deco & Points State
+  const [decoTab, setDecoTab] = useState<'deco' | 'kado' | 'voucher' | 'riwayat'>('deco');
+  const [voucherInput, setVoucherInput] = useState('');
+  const [voucherFeedback, setVoucherFeedback] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
+  const [kadoRecipientWa, setKadoRecipientWa] = useState('');
+  const [kadoAmount, setKadoAmount] = useState('');
+  const [kadoBorderId, setKadoBorderId] = useState('nika');
+
+  const handleBuyBorder = async (borderId: string, price: number) => {
+    if (!user) return;
+    if (user.role === 'admin') {
+      const currentOwned = user.ownedBorders || ['classic'];
+      const newOwned = currentOwned.includes(borderId) ? currentOwned : [...currentOwned, borderId];
+      setUser({ ...user, avatarBorder: borderId, ownedBorders: newOwned });
+      alert('Border berhasil diaktifkan untuk Admin!');
+      return;
+    }
+
+    if ((user.points || 0) < price) {
+      alert('Poin kamu tidak cukup untuk membeli border ini! Dapatkan poin lewat klaim harian, voucher, atau minta admin.');
+      return;
+    }
+    const currentOwned = user.ownedBorders || ['classic'];
+    if (currentOwned.includes(borderId)) {
+      alert('Border ini sudah kamu miliki! Klik Pakai untuk menggunakannya.');
+      return;
+    }
+    
+    try {
+      await updateDoc(doc(db, "users", user.wa), {
+        points: (user.points || 0) - price,
+        ownedBorders: [...currentOwned, borderId],
+        avatarBorder: borderId
+      });
+      alert('Selamat! Border berhasil dibeli dan langsung dipakai.');
+    } catch (err) {
+      console.error(err);
+      alert('Gagal membeli border. Silakan coba lagi.');
+    }
+  };
+
+  const handleEquipBorder = async (borderId: string) => {
+    if (!user) return;
+    if (user.role === 'admin') {
+      setUser({ ...user, avatarBorder: borderId });
+      alert('Border berhasil dipakai!');
+      return;
+    }
+    try {
+      await updateDoc(doc(db, "users", user.wa), {
+        avatarBorder: borderId
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleClaimDailyPoints = async () => {
+    if (!user) return;
+    if (user.role === 'admin') {
+      alert('Admin memiliki akses tak terbatas ke semua fitur & border.');
+      return;
+    }
+
+    const todayStr = new Date().toDateString();
+    const lastClaim = localStorage.getItem(`daily_claim_${user.wa}`);
+    if (lastClaim === todayStr) {
+      alert('Kamu sudah klaim bonus harian hari ini (+1.000 Poin)! Silakan kembali besok.');
+      return;
+    }
+
+    try {
+      const newPoints = (user.points || 0) + 1000;
+      await updateDoc(doc(db, "users", user.wa), { points: newPoints });
+      localStorage.setItem(`daily_claim_${user.wa}`, todayStr);
+      alert('🎉 Hore! Berhasil klaim +1.000 Poin Harian!');
+    } catch (e) {
+      console.error(e);
+      alert('Gagal klaim poin. Coba beberapa saat lagi.');
+    }
+  };
+
+  const handleRedeemVoucher = async () => {
+    if (!user) return;
+    const code = voucherInput.trim().toUpperCase();
+    if (!code) {
+      setVoucherFeedback({ type: 'error', message: 'Masukkan kode voucher terlebih dahulu!' });
+      return;
+    }
+
+    const vouchers: Record<string, number> = {
+      'FUTSARJUARA': 5000,
+      'NIKA2026': 10000,
+      'SASUKE2026': 10000,
+      'DRAGON2026': 10000,
+      'WANGLIN2026': 15000,
+      'FUTSALASIK': 3000,
+      'DECOJUARA': 5000,
+      'POINBONUS': 5000,
+      'FUTSAR2026': 10000
+    };
+
+    if (!vouchers[code]) {
+      setVoucherFeedback({ type: 'error', message: 'Kode voucher tidak valid atau sudah kadaluarsa.' });
+      return;
+    }
+
+    const reward = vouchers[code];
+    const redeemedKey = `voucher_${code}_${user.wa}`;
+    if (localStorage.getItem(redeemedKey)) {
+      setVoucherFeedback({ type: 'error', message: `Kamu sudah pernah menukarkan kode voucher ${code}!` });
+      return;
+    }
+
+    try {
+      if (user.role !== 'admin') {
+        const newPoints = (user.points || 0) + reward;
+        await updateDoc(doc(db, "users", user.wa), { points: newPoints });
+      }
+      localStorage.setItem(redeemedKey, 'true');
+      setVoucherInput('');
+      setVoucherFeedback({ type: 'success', message: `Selamat! Berhasil menukarkan kode ${code} dan mendapatkan +${reward.toLocaleString()} Poin!` });
+    } catch (e) {
+      console.error(e);
+      setVoucherFeedback({ type: 'error', message: 'Gagal menukarkan voucher. Silakan coba lagi.' });
+    }
+  };
+
+  const handleTransferPoints = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    const amount = Number(kadoAmount);
+    if (!kadoRecipientWa) {
+      alert('Pilih teman penerima terlebih dahulu!');
+      return;
+    }
+    if (isNaN(amount) || amount <= 0) {
+      alert('Masukkan jumlah poin yang valid!');
+      return;
+    }
+    if ((user.points || 0) < amount && user.role !== 'admin') {
+      alert('Poin kamu tidak mencukupi untuk transfer!');
+      return;
+    }
+
+    const recipient = allUsers.find(u => u.wa === kadoRecipientWa);
+    if (!recipient) {
+      alert('Member penerima tidak ditemukan.');
+      return;
+    }
+
+    try {
+      if (user.role !== 'admin') {
+        await updateDoc(doc(db, "users", user.wa), { points: (user.points || 0) - amount });
+      }
+      await updateDoc(doc(db, "users", recipient.wa), { points: (recipient.points || 0) + amount });
+      alert(`Berhasil mengirimkan ${amount.toLocaleString()} Poin ke ${recipient.nama}!`);
+      setKadoAmount('');
+    } catch (err) {
+      console.error(err);
+      alert('Gagal mengirimkan poin.');
+    }
+  };
+
+  const handleGiftBorderToFriend = async () => {
+    if (!user) return;
+    if (!kadoRecipientWa) {
+      alert('Pilih teman penerima terlebih dahulu!');
+      return;
+    }
+    const border = AVATAR_BORDERS.find(b => b.id === kadoBorderId);
+    if (!border) return;
+
+    if ((user.points || 0) < border.price && user.role !== 'admin') {
+      alert('Poin kamu tidak mencukupi untuk menghadiahkan border ini!');
+      return;
+    }
+
+    const recipient = allUsers.find(u => u.wa === kadoRecipientWa);
+    if (!recipient) {
+      alert('Member penerima tidak ditemukan.');
+      return;
+    }
+
+    const recipientOwned = recipient.ownedBorders || ['classic'];
+    if (recipientOwned.includes(border.id)) {
+      alert(`${recipient.nama} sudah memiliki border ${border.name}!`);
+      return;
+    }
+
+    try {
+      if (user.role !== 'admin') {
+        await updateDoc(doc(db, "users", user.wa), { points: (user.points || 0) - border.price });
+      }
+      await updateDoc(doc(db, "users", recipient.wa), {
+        ownedBorders: [...recipientOwned, border.id]
+      });
+      alert(`Berhasil menghadiahkan border ${border.name} kepada ${recipient.nama}!`);
+    } catch (err) {
+      console.error(err);
+      alert('Gagal menghadiahkan border.');
+    }
+  };
+
   const handleSendAiMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!aiInput.trim() || isAiTyping) return;
@@ -435,6 +695,7 @@ export default function Page() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMsg, history: aiMessages })
       });
+      
       const data = await response.json();
       setAiMessages(prev => [...prev, { role: 'ai', text: data.text }]);
     } catch (error) {
@@ -532,6 +793,8 @@ export default function Page() {
       });
       setAllUsers(users);
     });
+      
+    
     return () => unsubUsers();
   }, []);
 
@@ -542,9 +805,11 @@ export default function Page() {
       snapshot.forEach((docSnap) => {
         msgs.push({ id: docSnap.id, ...(docSnap.data() as Omit<ChatMessage, 'id'>) });
       });
+      
       msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
       setCommunityMessages(msgs);
     });
+    
     return () => unsubChat();
   }, []);
 
@@ -556,13 +821,15 @@ export default function Page() {
           ...defaultSettings, 
           ...parsed, 
           jadwalList: parsed.jadwalList || defaultSettings.jadwalList,
-          announcements: parsed.announcements || defaultSettings.announcements 
+          announcements: parsed.announcements || defaultSettings.announcements
         });
+        
       } else {
         setDoc(doc(db, "settings", "global"), defaultSettings);
       }
       setIsSettingsLoaded(true);
     });
+    
 
     const savedWa = localStorage.getItem('futsar_user_wa');
     let unsubUser: () => void;
@@ -576,6 +843,7 @@ export default function Page() {
         }
         setIsLoaded(true);
       });
+      
     } else if (savedWa === 'ADMIN') {
       const adminUser: User = {
         nama: 'Administrator',
@@ -615,7 +883,10 @@ export default function Page() {
       wa,
       id: `FTS${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}-2K26`,
       password,
-      status: 'pending'
+      status: 'pending',
+      points: 25000,
+      ownedBorders: ['classic'],
+      avatarBorder: 'classic'
     };
 
     // Save to Firestore
@@ -624,6 +895,7 @@ export default function Page() {
       setUser(newUser);
       setActiveModal(null);
     });
+    
   };
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
@@ -703,6 +975,7 @@ export default function Page() {
       themeColor,
       avatarBorder
     });
+    
     
     alert('Profil berhasil diperbarui!');
     setActiveModal(null);
@@ -1055,8 +1328,8 @@ export default function Page() {
                         <p className="text-lg md:text-xl font-bold uppercase">{user.posisi}</p>
                       </div>
                       <div className="border-l-2 pl-4" style={{ borderColor: user.themeColor || '#d4af37' }}>
-                        <p className="text-[10px] text-[#888] font-bold uppercase tracking-tighter">Contact</p>
-                        <p className="text-lg md:text-xl font-bold">{user.wa}</p>
+                        <p className="text-[10px] text-[#888] font-bold uppercase tracking-tighter">Points</p>
+                        <p className="text-lg md:text-xl font-bold text-[#ffd700] flex items-center gap-1.5"><Star size={16} fill="#ffd700" /> {user.points?.toLocaleString() || 0}</p>
                       </div>
                     </div>
                   </div>
@@ -1164,6 +1437,17 @@ export default function Page() {
                   </div>
                 </button>
                 
+                <button onClick={() => setActiveModal('deco')} className="bg-[#111]/60 backdrop-blur-md border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#ffd700] transition-colors text-left active:scale-[0.98]">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="bg-[#ffd700]/10 p-3 rounded-xl">
+                      <Star className="text-[#ffd700]" size={24} />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold mb-1 text-white">Toko Deco</h3>
+                    <p className="text-xs text-gray-500">Beli & pakai border profil</p>
+                  </div>
+                </button>
                 <button onClick={() => setActiveModal('info')} className="bg-[#111]/60 backdrop-blur-md border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
                   <div className="flex justify-between items-start mb-4">
                     <div className="bg-[#9b59b6]/10 p-3 rounded-xl">
@@ -1296,7 +1580,6 @@ export default function Page() {
                     <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10">
                       {AVATAR_BORDERS.map((borderOpt) => {
                         const isSelected = editingAvatarBorder === borderOpt.id;
-                        const BorderIcon = borderOpt.icon;
                         return (
                           <button
                             key={borderOpt.id}
@@ -1316,7 +1599,7 @@ export default function Page() {
                             />
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-bold text-white truncate flex items-center gap-1">
-                                <BorderIcon size={12} className={isSelected ? 'text-[#d4af37]' : 'text-gray-400'} />
+                                <Award size={12} className={isSelected ? 'text-[#d4af37]' : 'text-gray-400'} />
                                 <span>{borderOpt.name}</span>
                               </p>
                               <p className="text-[9px] text-gray-400 line-clamp-1 leading-tight mt-0.5">
@@ -1576,18 +1859,11 @@ export default function Page() {
               </>
             )}
 
-            {/* REKAP KAS MODAL */}
+                        {/* REKAP KAS MODAL */}
             {activeModal === 'rekap_kas' && (
               <>
                 <div className="flex justify-between items-center mt-2 mb-3 border-b border-[#333] pb-2">
                   <h2 className="text-[#d4af37] text-[22px] font-black uppercase tracking-[1px]">Catatan Kas</h2>
-                  <button 
-                    onClick={() => exportDataToCSV(allUsers)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#27ae60]/20 hover:bg-[#27ae60] text-[#27ae60] hover:text-white border border-[#27ae60]/40 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-sm"
-                    title="Unduh Rekap CSV"
-                  >
-                    <Download size={13} /> Ekspor CSV
-                  </button>
                 </div>
                 <p className="text-[12px] text-[#888] text-left mb-4">Status tagihan semua anggota Futsar Club yang terdaftar (klik anggota untuk melihat profil):</p>
                 
@@ -1682,6 +1958,508 @@ export default function Page() {
               </>
             )}
 
+
+            {/* DECO MODAL - UPGRADE AKUN & CUSTOM BORDERS */}
+            {activeModal === 'deco' && (
+              <>
+                {/* Header matching video */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-2 mb-4 border-b border-[#333] pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center font-black text-black text-xl shadow-[0_0_15px_rgba(245,158,11,0.5)] border border-amber-300">
+                      D
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black tracking-widest text-[#ffd700] uppercase block">DASHBOARD</span>
+                      <h2 className="text-white text-xl sm:text-2xl font-black tracking-tight">Upgrade akun lo</h2>
+                      <p className="text-[11px] text-[#888]">Pilih paket, bayar, aktivasi Instan.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                    <div className="flex items-center gap-2 bg-[#1a1a1a] px-3 py-1.5 rounded-xl border border-[#333]">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span className="text-xs font-bold text-gray-300 truncate max-w-[100px]">{user?.nama || 'Member'}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 bg-[#ffd700]/10 px-3 py-1.5 rounded-xl border border-[#ffd700]/30 shadow-inner">
+                      <Star size={14} className="text-[#ffd700]" fill="#ffd700" />
+                      <span className="text-[#ffd700] font-black text-sm">{user?.role === 'admin' ? '∞' : (user?.points || 0).toLocaleString()} Poin</span>
+                    </div>
+
+                    {user?.role !== 'admin' && (
+                      <button 
+                        onClick={handleClaimDailyPoints}
+                        className="px-2.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-[11px] font-bold shadow-md transition-all active:scale-95 cursor-pointer flex items-center gap-1"
+                        title="Klaim bonus +1.000 poin harian"
+                      >
+                        🎁 Klaim Harian
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Sub Navigation Tabs */}
+                <div className="flex items-center gap-1.5 bg-[#141414] p-1.5 rounded-2xl border border-[#282828] mb-5 overflow-x-auto scrollbar-none">
+                  <button
+                    onClick={() => setDecoTab('deco')}
+                    className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      decoTab === 'deco'
+                        ? 'bg-[#ffd700] text-black shadow-md font-black'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Sparkles size={14} /> Deco
+                  </button>
+                  <button
+                    onClick={() => setDecoTab('kado')}
+                    className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      decoTab === 'kado'
+                        ? 'bg-[#ffd700] text-black shadow-md font-black'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Gift size={14} /> Kado
+                  </button>
+                  <button
+                    onClick={() => setDecoTab('voucher')}
+                    className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      decoTab === 'voucher'
+                        ? 'bg-[#ffd700] text-black shadow-md font-black'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Ticket size={14} /> Voucher
+                  </button>
+                  <button
+                    onClick={() => setDecoTab('riwayat')}
+                    className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      decoTab === 'riwayat'
+                        ? 'bg-[#ffd700] text-black shadow-md font-black'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Clock size={14} /> Riwayat
+                  </button>
+                </div>
+
+                {/* TAB 1: DECO (Avatar Border Store) */}
+                {decoTab === 'deco' && (
+                  <div className="flex flex-col gap-6 max-h-[55vh] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-[#ffd700]">
+                    {/* One Piece Series */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                        <h3 className="text-white font-black text-sm uppercase tracking-wider">One Piece Series</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                        {AVATAR_BORDERS.filter(b => b.category === 'One Piece Series').map((border) => {
+                          const isOwned = user?.ownedBorders?.includes(border.id) || user?.role === 'admin';
+                          const isActive = user?.avatarBorder === border.id;
+                          return (
+                            <div key={border.id} className={`bg-[#181818] p-4 rounded-2xl flex flex-col items-center gap-3 text-center border-2 transition-all relative overflow-hidden ${isActive ? 'border-[#ffd700] bg-[#ffd700]/5 shadow-[0_0_20px_rgba(255,215,0,0.15)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
+                              <div className="py-2 flex items-center justify-center">
+                                <PlayerAvatar user={user} size="2xl" customBorder={border.id} />
+                              </div>
+                              <div className="w-full flex flex-col items-center">
+                                <span className="text-white font-black text-base">{border.name}</span>
+                                <span className="text-[11px] text-gray-400 line-clamp-1">{border.desc}</span>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <span className="text-xs font-bold text-emerald-400">Rp {border.price.toLocaleString()}</span>
+                                  <span className="text-[10px] text-gray-500">•</span>
+                                  <span className="text-xs font-bold text-[#ffd700] flex items-center gap-1">
+                                    <Star size={10} fill="#ffd700" /> {border.price.toLocaleString()} Poin
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="mt-auto pt-2 w-full">
+                                {isActive ? (
+                                  <button disabled className="w-full py-2.5 bg-[#ffd700] text-black font-black rounded-xl text-xs uppercase cursor-default shadow-md">Sedang Dipakai</button>
+                                ) : isOwned ? (
+                                  <button onClick={() => handleEquipBorder(border.id)} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl text-xs font-bold uppercase transition-all cursor-pointer">Pakai</button>
+                                ) : (
+                                  <button 
+                                    onClick={() => handleBuyBorder(border.id, border.price)}
+                                    className="w-full py-2.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-black font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                                  >
+                                    Beli
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Naruto Series */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+                        <h3 className="text-white font-black text-sm uppercase tracking-wider">Naruto Series</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                        {AVATAR_BORDERS.filter(b => b.category === 'Naruto Series').map((border) => {
+                          const isOwned = user?.ownedBorders?.includes(border.id) || user?.role === 'admin';
+                          const isActive = user?.avatarBorder === border.id;
+                          return (
+                            <div key={border.id} className={`bg-[#181818] p-4 rounded-2xl flex flex-col items-center gap-3 text-center border-2 transition-all relative overflow-hidden ${isActive ? 'border-purple-400 bg-purple-500/5 shadow-[0_0_20px_rgba(168,85,247,0.15)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
+                              <div className="py-2 flex items-center justify-center">
+                                <PlayerAvatar user={user} size="2xl" customBorder={border.id} />
+                              </div>
+                              <div className="w-full flex flex-col items-center">
+                                <span className="text-white font-black text-base">{border.name}</span>
+                                <span className="text-[11px] text-gray-400 line-clamp-1">{border.desc}</span>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <span className="text-xs font-bold text-emerald-400">Rp {border.price.toLocaleString()}</span>
+                                  <span className="text-[10px] text-gray-500">•</span>
+                                  <span className="text-xs font-bold text-[#ffd700] flex items-center gap-1">
+                                    <Star size={10} fill="#ffd700" /> {border.price.toLocaleString()} Poin
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="mt-auto pt-2 w-full">
+                                {isActive ? (
+                                  <button disabled className="w-full py-2.5 bg-purple-500 text-white font-black rounded-xl text-xs uppercase cursor-default shadow-md">Sedang Dipakai</button>
+                                ) : isOwned ? (
+                                  <button onClick={() => handleEquipBorder(border.id)} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl text-xs font-bold uppercase transition-all cursor-pointer">Pakai</button>
+                                ) : (
+                                  <button 
+                                    onClick={() => handleBuyBorder(border.id, border.price)}
+                                    className="w-full py-2.5 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                                  >
+                                    Beli
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Dragon Series */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-2 h-2 rounded-full bg-amber-300"></span>
+                        <h3 className="text-white font-black text-sm uppercase tracking-wider">Dragon</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                        {AVATAR_BORDERS.filter(b => b.category === 'Dragon Series').map((border) => {
+                          const isOwned = user?.ownedBorders?.includes(border.id) || user?.role === 'admin';
+                          const isActive = user?.avatarBorder === border.id;
+                          return (
+                            <div key={border.id} className={`bg-[#181818] p-4 rounded-2xl flex flex-col items-center gap-3 text-center border-2 transition-all relative overflow-hidden ${isActive ? 'border-amber-400 bg-amber-500/5 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
+                              <div className="py-2 flex items-center justify-center">
+                                <PlayerAvatar user={user} size="2xl" customBorder={border.id} />
+                              </div>
+                              <div className="w-full flex flex-col items-center">
+                                <span className="text-white font-black text-base">{border.name}</span>
+                                <span className="text-[11px] text-gray-400 line-clamp-1">{border.desc}</span>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <span className="text-xs font-bold text-emerald-400">Rp {border.price.toLocaleString()}</span>
+                                  <span className="text-[10px] text-gray-500">•</span>
+                                  <span className="text-xs font-bold text-[#ffd700] flex items-center gap-1">
+                                    <Star size={10} fill="#ffd700" /> {border.price.toLocaleString()} Poin
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="mt-auto pt-2 w-full">
+                                {isActive ? (
+                                  <button disabled className="w-full py-2.5 bg-amber-500 text-black font-black rounded-xl text-xs uppercase cursor-default shadow-md">Sedang Dipakai</button>
+                                ) : isOwned ? (
+                                  <button onClick={() => handleEquipBorder(border.id)} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl text-xs font-bold uppercase transition-all cursor-pointer">Pakai</button>
+                                ) : (
+                                  <button 
+                                    onClick={() => handleBuyBorder(border.id, border.price)}
+                                    className="w-full py-2.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-black font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                                  >
+                                    Beli
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Renegade Series */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                        <h3 className="text-white font-black text-sm uppercase tracking-wider">Renegade Series</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                        {AVATAR_BORDERS.filter(b => b.category === 'Renegade Series').map((border) => {
+                          const isOwned = user?.ownedBorders?.includes(border.id) || user?.role === 'admin';
+                          const isActive = user?.avatarBorder === border.id;
+                          return (
+                            <div key={border.id} className={`bg-[#181818] p-4 rounded-2xl flex flex-col items-center gap-3 text-center border-2 transition-all relative overflow-hidden ${isActive ? 'border-cyan-400 bg-cyan-500/5 shadow-[0_0_20px_rgba(6,182,212,0.15)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
+                              <div className="py-2 flex items-center justify-center">
+                                <PlayerAvatar user={user} size="2xl" customBorder={border.id} />
+                              </div>
+                              <div className="w-full flex flex-col items-center">
+                                <span className="text-white font-black text-base">{border.name}</span>
+                                <span className="text-[11px] text-gray-400 line-clamp-1">{border.desc}</span>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <span className="text-xs font-bold text-emerald-400">Rp {border.price.toLocaleString()}</span>
+                                  <span className="text-[10px] text-gray-500">•</span>
+                                  <span className="text-xs font-bold text-[#ffd700] flex items-center gap-1">
+                                    <Star size={10} fill="#ffd700" /> {border.price.toLocaleString()} Poin
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="mt-auto pt-2 w-full">
+                                {isActive ? (
+                                  <button disabled className="w-full py-2.5 bg-cyan-500 text-black font-black rounded-xl text-xs uppercase cursor-default shadow-md">Sedang Dipakai</button>
+                                ) : isOwned ? (
+                                  <button onClick={() => handleEquipBorder(border.id)} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl text-xs font-bold uppercase transition-all cursor-pointer">Pakai</button>
+                                ) : (
+                                  <button 
+                                    onClick={() => handleBuyBorder(border.id, border.price)}
+                                    className="w-full py-2.5 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-black font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                                  >
+                                    Beli
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Classic Series */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                        <h3 className="text-white font-black text-sm uppercase tracking-wider">Basic Series</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                        {AVATAR_BORDERS.filter(b => b.category === 'Basic').map((border) => {
+                          const isActive = user?.avatarBorder === border.id || (!user?.avatarBorder && border.id === 'classic');
+                          return (
+                            <div key={border.id} className={`bg-[#181818] p-4 rounded-2xl flex flex-col items-center gap-3 text-center border-2 transition-all relative overflow-hidden ${isActive ? 'border-[#d4af37] bg-[#d4af37]/5 shadow-[0_0_20px_rgba(212,175,55,0.15)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
+                              <div className="py-2 flex items-center justify-center">
+                                <PlayerAvatar user={user} size="2xl" customBorder={border.id} />
+                              </div>
+                              <div className="w-full flex flex-col items-center">
+                                <span className="text-white font-black text-base">{border.name}</span>
+                                <span className="text-[11px] text-gray-400 line-clamp-1">{border.desc}</span>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <span className="text-xs font-bold text-emerald-400">Gratis (Default)</span>
+                                </div>
+                              </div>
+                              <div className="mt-auto pt-2 w-full">
+                                {isActive ? (
+                                  <button disabled className="w-full py-2.5 bg-[#d4af37] text-black font-black rounded-xl text-xs uppercase cursor-default shadow-md">Sedang Dipakai</button>
+                                ) : (
+                                  <button onClick={() => handleEquipBorder(border.id)} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl text-xs font-bold uppercase transition-all cursor-pointer">Pakai</button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: KADO (Kirim Poin & Hadiah Border) */}
+                {decoTab === 'kado' && (
+                  <div className="flex flex-col gap-6 max-h-[55vh] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-[#ffd700]">
+                    <div className="bg-[#181818] p-5 rounded-2xl border border-[#333]">
+                      <h3 className="text-[#ffd700] font-black text-base uppercase tracking-wider mb-2 flex items-center gap-2">
+                        <Gift size={18} /> Transfer Poin ke Teman
+                      </h3>
+                      <p className="text-xs text-gray-400 mb-4">Bagi saldo poin kamu ke sesama anggota klub.</p>
+
+                      <form onSubmit={handleTransferPoints} className="flex flex-col gap-3.5">
+                        <div>
+                          <label className="text-xs font-bold text-gray-300 block mb-1">Pilih Anggota Penerima</label>
+                          <select
+                            value={kadoRecipientWa}
+                            onChange={(e) => setKadoRecipientWa(e.target.value)}
+                            className="w-full bg-[#111] border border-[#444] rounded-xl px-3 py-2.5 text-sm text-white focus:border-[#ffd700] focus:outline-none"
+                            required
+                          >
+                            <option value="">-- Pilih Rekan Klub --</option>
+                            {allUsers.filter(u => u.wa !== user?.wa).map(u => (
+                              <option key={u.wa} value={u.wa}>{u.nama} ({u.posisi || 'Member'}) - Poin: {u.points || 0}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-bold text-gray-300 block mb-1">Jumlah Poin</label>
+                          <input
+                            type="number"
+                            placeholder="Contoh: 5000"
+                            value={kadoAmount}
+                            onChange={(e) => setKadoAmount(e.target.value)}
+                            className="w-full bg-[#111] border border-[#444] rounded-xl px-3 py-2.5 text-sm text-white focus:border-[#ffd700] focus:outline-none"
+                            min="100"
+                            required
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          className="w-full py-3 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-black font-black rounded-xl text-xs uppercase tracking-wider shadow-md transition-all active:scale-95 cursor-pointer mt-1"
+                        >
+                          Kirim Poin Sekarang
+                        </button>
+                      </form>
+                    </div>
+
+                    <div className="bg-[#181818] p-5 rounded-2xl border border-[#333]">
+                      <h3 className="text-purple-400 font-black text-base uppercase tracking-wider mb-2 flex items-center gap-2">
+                        <Sparkles size={18} /> Hadiahkan Border Custom
+                      </h3>
+                      <p className="text-xs text-gray-400 mb-4">Beli dan kirimkan border avatar langsung ke akun teman.</p>
+
+                      <div className="flex flex-col gap-3.5">
+                        <div>
+                          <label className="text-xs font-bold text-gray-300 block mb-1">Pilih Border yang Ingin Dihadiahkan</label>
+                          <select
+                            value={kadoBorderId}
+                            onChange={(e) => setKadoBorderId(e.target.value)}
+                            className="w-full bg-[#111] border border-[#444] rounded-xl px-3 py-2.5 text-sm text-white focus:border-purple-400 focus:outline-none"
+                          >
+                            {AVATAR_BORDERS.filter(b => b.price > 0).map(b => (
+                              <option key={b.id} value={b.id}>{b.name} - {b.category} ({b.price.toLocaleString()} Poin)</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <button
+                          onClick={handleGiftBorderToFriend}
+                          className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md transition-all active:scale-95 cursor-pointer"
+                        >
+                          Hadiahkan Border
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 3: VOUCHER (Klaim Kode Promo) */}
+                {decoTab === 'voucher' && (
+                  <div className="flex flex-col gap-5 max-h-[55vh] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-[#ffd700]">
+                    <div className="bg-[#181818] p-5 rounded-2xl border border-[#333]">
+                      <h3 className="text-[#ffd700] font-black text-base uppercase tracking-wider mb-2 flex items-center gap-2">
+                        <Ticket size={18} /> Tukarkan Kode Voucher
+                      </h3>
+                      <p className="text-xs text-gray-400 mb-4">Masukkan kode voucher promo untuk mendapatkan bonus poin instan.</p>
+
+                      <div className="flex flex-col sm:flex-row gap-2.5 mb-4">
+                        <input
+                          type="text"
+                          placeholder="Masukkan Kode (cth: FUTSARJUARA)"
+                          value={voucherInput}
+                          onChange={(e) => setVoucherInput(e.target.value)}
+                          className="flex-1 bg-[#111] border border-[#444] rounded-xl px-3 py-2.5 text-sm text-white uppercase font-bold tracking-wider focus:border-[#ffd700] focus:outline-none"
+                        />
+                        <button
+                          onClick={handleRedeemVoucher}
+                          className="px-5 py-2.5 bg-[#ffd700] hover:bg-[#e6c200] text-black font-black rounded-xl text-xs uppercase tracking-wider shadow-md transition-all active:scale-95 cursor-pointer shrink-0"
+                        >
+                          Tukarkan
+                        </button>
+                      </div>
+
+                      {voucherFeedback.type && (
+                        <div className={`p-3 rounded-xl text-xs font-bold border ${
+                          voucherFeedback.type === 'success' 
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
+                            : 'bg-red-500/10 text-red-400 border-red-500/30'
+                        }`}>
+                          {voucherFeedback.message}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-[#141414] p-4 rounded-2xl border border-[#282828]">
+                      <h4 className="text-xs font-bold text-gray-300 uppercase mb-3 flex items-center gap-1.5">
+                        <Sparkles size={14} className="text-amber-400" /> Kode Voucher Aktif
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div className="bg-[#1e1e1e] p-3 rounded-xl border border-[#333] flex justify-between items-center">
+                          <div>
+                            <span className="font-mono font-black text-sm text-[#ffd700]">FUTSARJUARA</span>
+                            <p className="text-[10px] text-gray-400">+5.000 Poin Selamat Datang</p>
+                          </div>
+                          <button onClick={() => setVoucherInput('FUTSARJUARA')} className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded font-bold uppercase">Pakai</button>
+                        </div>
+                        <div className="bg-[#1e1e1e] p-3 rounded-xl border border-[#333] flex justify-between items-center">
+                          <div>
+                            <span className="font-mono font-black text-sm text-cyan-400">NIKA2026</span>
+                            <p className="text-[10px] text-gray-400">+10.000 Poin Series One Piece</p>
+                          </div>
+                          <button onClick={() => setVoucherInput('NIKA2026')} className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded font-bold uppercase">Pakai</button>
+                        </div>
+                        <div className="bg-[#1e1e1e] p-3 rounded-xl border border-[#333] flex justify-between items-center">
+                          <div>
+                            <span className="font-mono font-black text-sm text-purple-400">SASUKE2026</span>
+                            <p className="text-[10px] text-gray-400">+10.000 Poin Series Naruto</p>
+                          </div>
+                          <button onClick={() => setVoucherInput('SASUKE2026')} className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded font-bold uppercase">Pakai</button>
+                        </div>
+                        <div className="bg-[#1e1e1e] p-3 rounded-xl border border-[#333] flex justify-between items-center">
+                          <div>
+                            <span className="font-mono font-black text-sm text-amber-300">DRAGON2026</span>
+                            <p className="text-[10px] text-gray-400">+10.000 Poin Dragon Special</p>
+                          </div>
+                          <button onClick={() => setVoucherInput('DRAGON2026')} className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded font-bold uppercase">Pakai</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 4: RIWAYAT & KOLEKSI */}
+                {decoTab === 'riwayat' && (
+                  <div className="flex flex-col gap-4 max-h-[55vh] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-[#ffd700]">
+                    <div className="bg-[#181818] p-4 rounded-2xl border border-[#333]">
+                      <h3 className="text-white font-black text-sm uppercase tracking-wider mb-3">Koleksi Border Kamu</h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {AVATAR_BORDERS.filter(b => (user?.ownedBorders || ['classic']).includes(b.id) || b.id === 'classic' || user?.role === 'admin').map((border) => {
+                          const isActive = user?.avatarBorder === border.id || (!user?.avatarBorder && border.id === 'classic');
+                          return (
+                            <div key={border.id} className="bg-[#121212] p-3 rounded-xl border border-[#2a2a2a] flex flex-col items-center text-center gap-2">
+                              <PlayerAvatar user={user} size="lg" customBorder={border.id} />
+                              <span className="text-xs font-bold text-white">{border.name}</span>
+                              {isActive ? (
+                                <span className="text-[10px] font-black text-[#ffd700] uppercase bg-[#ffd700]/10 px-2 py-0.5 rounded-full border border-[#ffd700]/30">Aktif</span>
+                              ) : (
+                                <button onClick={() => handleEquipBorder(border.id)} className="text-[10px] font-bold text-white bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-lg uppercase w-full">Gunakan</button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="bg-[#181818] p-4 rounded-2xl border border-[#333]">
+                      <h3 className="text-white font-black text-sm uppercase tracking-wider mb-2">Info Saldo & Level</h3>
+                      <div className="flex justify-between items-center bg-[#111] p-3 rounded-xl border border-[#282828]">
+                        <span className="text-xs text-gray-400">Total Poin Klub</span>
+                        <span className="text-sm font-black text-[#ffd700] flex items-center gap-1">
+                          <Star size={14} fill="#ffd700" /> {user?.role === 'admin' ? 'Unlimited' : (user?.points || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-4 pt-3 border-t border-[#333]">
+                  <button onClick={() => setActiveModal(null)} className="w-full bg-white/5 hover:bg-white/10 text-white border border-[#444] p-3 rounded-xl text-xs font-bold uppercase transition-all active:scale-95 cursor-pointer">
+                    Tutup Dashboard Deco
+                  </button>
+                </div>
+              </>
+            )}
+            
             {/* TAKTIK MODAL */}
             {activeModal === 'taktik' && (
               <>
@@ -2434,6 +3212,7 @@ function AdminDashboard({
         } else if (u.status === 'active') {
           aUsers.push(u);
         }
+      
       });
       setPendingUsers(pUsers);
       setActiveUsers(aUsers);
@@ -2452,8 +3231,9 @@ function AdminDashboard({
   const handleTogglePayment = async (wa: string, currentStatus: boolean) => {
     await updateDoc(doc(db, "users", wa), { 
       isPaid: !currentStatus, 
-      lastPaymentDate: !currentStatus ? new Date().toISOString() : null 
+      lastPaymentDate: !currentStatus ? new Date().toISOString() : null
     });
+    
   };
   
   const handleKasSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -2819,6 +3599,20 @@ function AdminDashboard({
                         </button>
                       )}
                       <button 
+                        onClick={() => {
+                          const newPoints = prompt('Set poin untuk ' + u.nama + ':', String(u.points || 0));
+                          if (newPoints !== null && !isNaN(Number(newPoints))) {
+                            
+                              
+                            updateDoc(doc(db, "users", u.wa), { points: Number(newPoints) });
+                            
+                          }
+                        }}
+                        className="px-3 py-2 bg-[#ffd700]/10 text-[#ffd700] border border-[#ffd700]/30 hover:bg-[#ffd700] hover:text-black rounded-lg text-[10px] font-bold uppercase transition-colors"
+                      >
+                        Poin
+                      </button>
+                      <button 
                         onClick={() => handleTogglePayment(u.wa, !!u.isPaid)} 
                         className={`flex-1 md:flex-none px-4 py-2 border rounded-lg text-[10px] font-bold uppercase transition-colors text-center ${u.isPaid ? 'bg-[#ff4d4d]/10 text-[#ff4d4d] hover:bg-[#ff4d4d] hover:text-white border-[#ff4d4d]' : 'bg-[#27ae60]/10 text-[#27ae60] hover:bg-[#27ae60] hover:text-white border-[#27ae60]'}`}
                       >
@@ -2827,6 +3621,125 @@ function AdminDashboard({
                     </div>
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+
+          {/* MANAJEMEN POIN & BORDER MEMBER */}
+          <div className="bg-[#111]/60 backdrop-blur-md border border-[#ffd700]/30 p-6 rounded-2xl shadow-[0_4px_20px_rgba(255,215,0,0.05)]">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+              <div>
+                <h3 className="text-[#ffd700] font-black text-xl uppercase tracking-widest flex items-center gap-2">
+                  <Star className="text-[#ffd700]" size={20} fill="#ffd700" /> Manajemen Poin & Border
+                </h3>
+                <p className="text-xs text-[#888] mt-0.5">Kelola saldo poin, tambah reward MVP/kehadiran, atau berikan custom border ke anggota.</p>
+              </div>
+              {onExportCSV && (
+                <button 
+                  onClick={() => onExportCSV(activeUsers)}
+                  className="px-3 py-1.5 bg-[#ffd700]/20 hover:bg-[#ffd700] text-[#ffd700] hover:text-black border border-[#ffd700]/40 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                  title="Ekspor Data Poin & Anggota ke CSV"
+                >
+                  <Download size={13} /> Ekspor Data CSV
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3 max-h-[350px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#ffd700] pr-2">
+              {activeUsers.length === 0 ? (
+                <p className="text-xs text-[#888] italic">Belum ada anggota yang aktif.</p>
+              ) : (
+                activeUsers.map((u) => {
+                  const currentBorder = AVATAR_BORDERS.find(b => b.id === (u.avatarBorder || 'classic'))?.name || 'Classic';
+                  return (
+                    <div key={u.wa} className="flex flex-col md:flex-row justify-between items-start md:items-center bg-[#181818] p-4 rounded-xl border border-[#333] hover:border-[#ffd700]/50 transition-all gap-4">
+                      <div className="flex items-center gap-3">
+                        <PlayerAvatar user={u} size="md" />
+                        <div className="text-left">
+                          <p className="text-sm font-bold text-white uppercase tracking-wide flex items-center gap-1.5">
+                            {u.nama}
+                            {u.jerseyNumber && <span className="text-[10px] text-[#888]">#{u.jerseyNumber}</span>}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[11px] text-[#ffd700] font-black flex items-center gap-1 bg-[#ffd700]/10 px-2 py-0.5 rounded-full border border-[#ffd700]/20">
+                              <Star size={10} fill="#ffd700" /> {(u.points || 0).toLocaleString()} Poin
+                            </span>
+                            <span className="text-[10px] text-gray-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+                              Border: {currentBorder}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto justify-end">
+                        <button
+                          onClick={() => {
+                            const newPoints = (u.points || 0) + 1000;
+                            updateDoc(doc(db, "users", u.wa), { points: newPoints });
+                          }}
+                          className="px-2 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 hover:text-black text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-black transition-all"
+                          title="Tambah 1.000 Poin"
+                        >
+                          +1K
+                        </button>
+                        <button
+                          onClick={() => {
+                            const newPoints = (u.points || 0) + 5000;
+                            updateDoc(doc(db, "users", u.wa), { points: newPoints });
+                          }}
+                          className="px-2 py-1.5 bg-cyan-500/10 hover:bg-cyan-500 hover:text-black text-cyan-400 border border-cyan-500/30 rounded-lg text-[10px] font-black transition-all"
+                          title="Tambah 5.000 Poin (MVP/Bonus)"
+                        >
+                          +5K
+                        </button>
+                        <button
+                          onClick={() => {
+                            const newPoints = (u.points || 0) + 10000;
+                            updateDoc(doc(db, "users", u.wa), { points: newPoints });
+                          }}
+                          className="px-2 py-1.5 bg-[#ffd700]/10 hover:bg-[#ffd700] hover:text-black text-[#ffd700] border border-[#ffd700]/30 rounded-lg text-[10px] font-black transition-all"
+                          title="Tambah 10.000 Poin"
+                        >
+                          +10K
+                        </button>
+                        <button
+                          onClick={() => {
+                            const val = prompt(`Set jumlah poin manual untuk ${u.nama}:`, String(u.points || 0));
+                            if (val !== null && !isNaN(Number(val))) {
+                              updateDoc(doc(db, "users", u.wa), { points: Number(val) });
+                            }
+                          }}
+                          className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[10px] font-bold uppercase transition-all"
+                        >
+                          Set Poin
+                        </button>
+                        <button
+                          onClick={() => {
+                            const borderChoice = prompt(`Pilih border untuk ${u.nama}:\n1. nika (One Piece)\n2. sasuke (Naruto)\n3. dragon (Dragon)\n4. wanglin (Renegade)\n5. wanglin2 (Renegade II)\n6. classic (Klasik)`, "nika");
+                            if (borderChoice) {
+                              const valid = ['nika', 'sasuke', 'dragon', 'wanglin', 'wanglin2', 'classic'];
+                              const chosen = borderChoice.toLowerCase().trim();
+                              if (valid.includes(chosen)) {
+                                const currentOwned = u.ownedBorders || ['classic'];
+                                const newOwned = currentOwned.includes(chosen) ? currentOwned : [...currentOwned, chosen];
+                                updateDoc(doc(db, "users", u.wa), { 
+                                  avatarBorder: chosen,
+                                  ownedBorders: newOwned
+                                });
+                                alert(`Border ${chosen} berhasil diaktifkan untuk ${u.nama}!`);
+                              } else {
+                                alert('Nama border tidak valid.');
+                              }
+                            }
+                          }}
+                          className="px-2.5 py-1.5 bg-purple-500/20 hover:bg-purple-500 text-purple-300 hover:text-white border border-purple-500/40 rounded-lg text-[10px] font-bold uppercase transition-all"
+                        >
+                          Beri Border
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
