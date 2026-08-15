@@ -1642,50 +1642,74 @@ export default function Page() {
                     </div>
                   </div>
 
-                  {/* PILIH BORDER PROFIL (AVATAR FRAME) */}
-                  <div>
-                    <label className="block text-[11px] text-[#aaa] font-bold uppercase mb-1.5 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <Award size={13} className="text-[#d4af37]" /> Border Profil (Frame)
-                      </span>
-                      <span className="text-[10px] text-[#d4af37] font-semibold">
-                        {AVATAR_BORDERS.find(b => b.id === editingAvatarBorder)?.name}
-                      </span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10">
-                      {AVATAR_BORDERS.map((borderOpt) => {
-                        const isSelected = editingAvatarBorder === borderOpt.id;
-                        return (
-                          <button
-                            key={borderOpt.id}
-                            type="button"
-                            onClick={() => setEditingAvatarBorder(borderOpt.id)}
-                            className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
-                              isSelected
-                                ? 'bg-white/[0.08] border-[#d4af37] shadow-[0_0_12px_rgba(212,175,55,0.25)] ring-1 ring-[#d4af37]'
-                                : 'bg-[#151515]/60 border-white/10 hover:border-white/20 hover:bg-white/[0.04]'
-                            }`}
-                          >
-                            <PlayerAvatar 
-                              user={user}
-                              customThemeColor={editingThemeColor}
-                              customBorder={borderOpt.id}
-                              size="sm"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold text-white truncate flex items-center gap-1">
-                                <Award size={12} className={isSelected ? 'text-[#d4af37]' : 'text-gray-400'} />
-                                <span>{borderOpt.name}</span>
-                              </p>
-                              <p className="text-[9px] text-gray-400 line-clamp-1 leading-tight mt-0.5">
-                                {borderOpt.desc}
-                              </p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  {/* PILIH BORDER PROFIL (AVATAR FRAME) - HANYA DEFAULT & YANG SUDAH DIBELI */}
+                  {(() => {
+                    const ownedAndDefaultBorders = getMergedBorders(settings).filter(
+                      b => b.id === 'classic' || (b.price === 0) || (user?.ownedBorders || []).includes(b.id) || user?.avatarBorder === b.id || user?.role === 'admin'
+                    );
+
+                    return (
+                      <div>
+                        <label className="block text-[11px] text-[#aaa] font-bold uppercase mb-1.5 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Award size={13} className="text-[#d4af37]" /> Border Profil (Frame)
+                          </span>
+                          <span className="text-[10px] text-[#d4af37] font-semibold">
+                            {getMergedBorders(settings).find(b => b.id === editingAvatarBorder)?.name || 'Solid Klasik'}
+                          </span>
+                        </label>
+
+                        <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10">
+                          {ownedAndDefaultBorders.map((borderOpt) => {
+                            const isSelected = editingAvatarBorder === borderOpt.id;
+                            return (
+                              <button
+                                key={borderOpt.id}
+                                type="button"
+                                onClick={() => setEditingAvatarBorder(borderOpt.id)}
+                                className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-white/[0.08] border-[#d4af37] shadow-[0_0_12px_rgba(212,175,55,0.25)] ring-1 ring-[#d4af37]'
+                                    : 'bg-[#151515]/60 border-white/10 hover:border-white/20 hover:bg-white/[0.04]'
+                                }`}
+                              >
+                                <PlayerAvatar 
+                                  user={user}
+                                  customThemeColor={editingThemeColor}
+                                  customBorder={borderOpt.id}
+                                  size="sm"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-bold text-white truncate flex items-center gap-1">
+                                    <Award size={12} className={isSelected ? 'text-[#d4af37]' : 'text-gray-400'} />
+                                    <span>{borderOpt.name}</span>
+                                  </p>
+                                  <p className="text-[9px] text-gray-400 line-clamp-1 leading-tight mt-0.5">
+                                    {borderOpt.desc}
+                                  </p>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {user?.role !== 'admin' && (
+                          <div className="mt-2 flex justify-between items-center text-[10px]">
+                            <span className="text-gray-500">
+                              {ownedAndDefaultBorders.length} border dimiliki
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setActiveModal('deco')}
+                              className="text-[#ffd700] hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                            >
+                              <Sparkles size={11} /> Beli di Futsar Style &rarr;
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* WARNA TEMA PROFIL */}
                   <div>
