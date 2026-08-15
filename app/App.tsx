@@ -1432,20 +1432,10 @@ export default function Page() {
                   <div className="flex sm:flex-col gap-2 shrink-0">
                     <button 
                       onClick={() => setSelectedMember(user)} 
-                      className="px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 text-black shadow-md cursor-pointer"
+                      className="px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 text-black shadow-lg cursor-pointer hover:opacity-95"
                       style={{ backgroundColor: user.themeColor || '#d4af37' }}
                     >
-                      <Eye size={14} /> Kartu Profil
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setEditingThemeColor(user.themeColor || '#d4af37');
-                        setEditingAvatarBorder(user.avatarBorder || 'classic');
-                        setActiveModal('profile');
-                      }} 
-                      className="px-4 py-2.5 bg-[#1a1a1a] text-[#d4af37] border border-[#d4af37]/50 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-[#d4af37]/10 transition-colors active:scale-95 cursor-pointer"
-                    >
-                      <Edit2 size={14} /> Edit Profil
+                      <Eye size={15} /> Kartu Profil
                     </button>
                   </div>
                 </div>
