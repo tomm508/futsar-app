@@ -12,14 +12,24 @@ body {
   50% { transform: scale(1.05) rotate(4deg); }
 }
 
+@keyframes nika-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 @keyframes lightning-flash {
   0%, 100% { opacity: 0.3; transform: scale(0.9); }
   50% { opacity: 1; transform: scale(1.15); }
 }
 
 @keyframes susanoo-flame {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(168,85,247,0.8)); }
-  50% { transform: scale(1.06); filter: drop-shadow(0 0 16px rgba(192,132,252,1)); }
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(168,85,247,0.8)); }
+  50% { transform: scale(1.06); filter: drop-shadow(0 0 20px rgba(192,132,252,1)); }
+}
+
+@keyframes susanoo-pulse {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
+  50% { transform: scale(1.04) rotate(180deg); opacity: 1; }
 }
 
 @keyframes sharingan-spin {
@@ -33,8 +43,13 @@ body {
 }
 
 @keyframes celestial-pulse {
-  0%, 100% { transform: scale(0.98); opacity: 0.8; }
+  0%, 100% { transform: scale(0.97); opacity: 0.85; }
   50% { transform: scale(1.04); opacity: 1; }
+}
+
+@keyframes flame-flow {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.05) rotate(180deg); }
 }
 
 @keyframes cosmic-spin {
@@ -46,6 +61,10 @@ body {
   animation: cloud-float 4s ease-in-out infinite;
 }
 
+.animate-nika-spin {
+  animation: nika-spin 12s linear infinite;
+}
+
 .animate-lightning-flash {
   animation: lightning-flash 1.5s ease-in-out infinite;
 }
@@ -54,19 +73,27 @@ body {
   animation: susanoo-flame 3s ease-in-out infinite;
 }
 
+.animate-susanoo-pulse {
+  animation: susanoo-pulse 8s ease-in-out infinite;
+}
+
 .animate-sharingan-spin {
   animation: sharingan-spin 12s linear infinite;
 }
 
 .animate-dragon-orbit {
-  animation: dragon-orbit 20s linear infinite;
+  animation: dragon-orbit 16s linear infinite;
 }
 
 .animate-celestial-pulse {
   animation: celestial-pulse 2.5s ease-in-out infinite;
 }
 
+.animate-flame-flow {
+  animation: flame-flow 10s ease-in-out infinite;
+}
+
 .animate-cosmic-spin {
-  animation: cosmic-spin 16s linear infinite;
+  animation: cosmic-spin 14s linear infinite;
 }
 

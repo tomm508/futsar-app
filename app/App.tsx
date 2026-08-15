@@ -102,55 +102,86 @@ function PlayerAvatar({
   const isOnline = showOnline && user?.lastActive && currentTime > 0 && (currentTime - user.lastActive < 90000);
 
   const sizeStyles = {
-    xs: { wrapper: 'w-6 h-6', inner: 'w-5 h-5 text-[10px]' },
-    sm: { wrapper: 'w-8 h-8', inner: 'w-7 h-7 text-xs' },
-    md: { wrapper: 'w-10 h-10', inner: 'w-9 h-9 text-sm' },
-    lg: { wrapper: 'w-16 h-16', inner: 'w-[58px] h-[58px] text-xl' },
-    xl: { wrapper: 'w-20 h-20', inner: 'w-[72px] h-[72px] text-2xl' },
-    '2xl': { wrapper: 'w-24 h-24', inner: 'w-[86px] h-[86px] text-3xl' }
-  }[size] || { wrapper: 'w-10 h-10', inner: 'w-9 h-9 text-sm' };
+    xs: { wrapper: 'w-[28px] h-[28px]', inner: 'w-[20px] h-[20px] text-[10px]' },
+    sm: { wrapper: 'w-[38px] h-[38px]', inner: 'w-[26px] h-[26px] text-xs' },
+    md: { wrapper: 'w-[52px] h-[52px]', inner: 'w-[36px] h-[36px] text-sm' },
+    lg: { wrapper: 'w-[76px] h-[76px]', inner: 'w-[54px] h-[54px] text-xl' },
+    xl: { wrapper: 'w-[104px] h-[104px]', inner: 'w-[72px] h-[72px] text-2xl' },
+    '2xl': { wrapper: 'w-[124px] h-[124px]', inner: 'w-[86px] h-[86px] text-3xl' }
+  }[size] || { wrapper: 'w-[52px] h-[52px]', inner: 'w-[36px] h-[36px] text-sm' };
 
   const isSmall = size === 'xs' || size === 'sm';
 
-  const getFrameClasses = () => {
-    switch (borderStyle) {
-      case 'nika':
-        return 'p-[3px] rounded-full bg-gradient-to-tr from-white via-cyan-100 to-amber-100 shadow-[0_0_16px_rgba(255,255,255,0.95),0_0_28px_rgba(186,230,253,0.7)] animate-cloud-float';
-      case 'sasuke':
-        return 'p-[3px] rounded-full bg-gradient-to-tr from-purple-950 via-purple-600 to-indigo-950 shadow-[0_0_16px_rgba(168,85,247,0.85),0_0_26px_rgba(126,34,206,0.6)] ring-1 ring-purple-400/60 animate-susanoo-flame';
-      case 'dragon':
-        return 'p-[3px] rounded-full bg-gradient-to-tr from-amber-400 via-yellow-100 to-amber-600 shadow-[0_0_16px_rgba(245,158,11,0.85),0_0_28px_rgba(251,191,36,0.6)] animate-dragon-orbit';
-      case 'wanglin':
-        return 'p-[3px] rounded-full bg-gradient-to-br from-red-800 via-amber-500 to-red-600 shadow-[0_0_16px_rgba(239,68,68,0.85),0_0_28px_rgba(217,119,6,0.5)] animate-celestial-pulse';
-      case 'wanglin2':
-        return 'p-[4px] rounded-full bg-gradient-to-r from-slate-950 via-blue-900 to-purple-950 shadow-[0_0_20px_rgba(59,130,246,0.9),0_0_35px_rgba(147,51,234,0.6)] ring-2 ring-cyan-400/50 animate-cosmic-spin';
-      case 'classic':
-      default:
-        return 'p-[2px] rounded-full border-2';
-    }
-  };
-
-  const getFrameStyles = () => {
-    if (borderStyle === 'classic' || !AVATAR_BORDERS.find(b => b.id === borderStyle)) {
-      return {
-        borderColor: theme,
-        boxShadow: `0 2px 8px ${theme}33`
-      };
-    }
-    return undefined;
-  };
-
   return (
     <div 
-      className={`relative inline-flex items-center justify-center shrink-0 ${onClick ? 'cursor-pointer transition-transform hover:scale-105 active:scale-95' : ''} ${className}`}
+      className={`relative inline-flex items-center justify-center shrink-0 select-none ${onClick ? 'cursor-pointer transition-transform hover:scale-105 active:scale-95' : ''} ${className}`}
       onClick={onClick}
       title={title}
     >
-      <div 
-        className={`${getFrameClasses()} ${sizeStyles.wrapper} flex items-center justify-center relative`}
-        style={getFrameStyles()}
-      >
-        <div className={`${sizeStyles.inner} rounded-full overflow-hidden bg-[#161616] flex items-center justify-center relative shadow-inner z-10`}>
+      <div className={`${sizeStyles.wrapper} relative flex items-center justify-center`}>
+        {/* ================= ANIMATED BORDER LAYERS (Hanya Border yang Bergerak) ================= */}
+        {borderStyle === 'nika' && (
+          <>
+            {/* Outer Solar Flame / Steam Aura */}
+            <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-white via-cyan-300 to-amber-200 blur-[8px] opacity-70 animate-cloud-float pointer-events-none" />
+            {/* Rotating Sun God Nika Frame */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white via-cyan-200 to-amber-300 p-[3.5px] shadow-[0_0_20px_rgba(255,255,255,0.95),0_0_35px_rgba(186,230,253,0.8)] animate-nika-spin pointer-events-none" />
+            <div className="absolute inset-[3px] rounded-full border border-amber-300/70 pointer-events-none" />
+          </>
+        )}
+
+        {borderStyle === 'sasuke' && (
+          <>
+            {/* Outer Susanoo Chakra Aura */}
+            <div className="absolute -inset-2 rounded-full bg-gradient-to-tr from-purple-900 via-purple-600 to-indigo-800 blur-[10px] opacity-80 animate-susanoo-flame pointer-events-none" />
+            {/* Pulsing & Rotating Susanoo Dark Flame Ring */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-purple-950 via-purple-500 to-indigo-950 p-[3.5px] ring-2 ring-purple-400 shadow-[0_0_24px_rgba(168,85,247,0.95),0_0_40px_rgba(126,34,206,0.75)] animate-susanoo-pulse pointer-events-none" />
+            <div className="absolute inset-[3px] rounded-full border border-purple-300/70 pointer-events-none" />
+          </>
+        )}
+
+        {borderStyle === 'dragon' && (
+          <>
+            {/* Outer Dragon Shimmer Aura */}
+            <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-amber-500 via-yellow-200 to-amber-600 blur-[8px] opacity-75 animate-celestial-pulse pointer-events-none" />
+            {/* Rotating Imperial Dragon Golden Ring */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-100 to-amber-600 p-[3.5px] shadow-[0_0_22px_rgba(245,158,11,0.95),0_0_38px_rgba(251,191,36,0.8)] animate-dragon-orbit pointer-events-none" />
+            <div className="absolute inset-[3px] rounded-full border border-yellow-200/80 pointer-events-none" />
+          </>
+        )}
+
+        {borderStyle === 'wanglin' && (
+          <>
+            {/* Outer Ancient Slaughter Domain Aura */}
+            <div className="absolute -inset-1.5 rounded-full bg-gradient-to-br from-red-600 via-amber-500 to-red-800 blur-[8px] opacity-80 animate-celestial-pulse pointer-events-none" />
+            {/* Flowing Slaughter Flame Ring */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-700 via-amber-400 to-red-600 p-[3.5px] shadow-[0_0_22px_rgba(239,68,68,0.95),0_0_36px_rgba(217,119,6,0.7)] animate-flame-flow pointer-events-none" />
+            <div className="absolute inset-[3px] rounded-full border border-amber-300/70 pointer-events-none" />
+          </>
+        )}
+
+        {borderStyle === 'wanglin2' && (
+          <>
+            {/* Outer Cosmic Void Energy */}
+            <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-blue-600 via-cyan-400 to-purple-600 blur-[10px] opacity-85 animate-cosmic-spin pointer-events-none" />
+            {/* Cosmic Void Domain Rotating Core Ring */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-slate-950 via-blue-900 to-purple-950 p-[4px] ring-2 ring-cyan-300 shadow-[0_0_28px_rgba(59,130,246,0.95),0_0_45px_rgba(147,51,234,0.8)] animate-cosmic-spin pointer-events-none" />
+            <div className="absolute inset-[3.5px] rounded-full border border-cyan-400/80 pointer-events-none" />
+          </>
+        )}
+
+        {(borderStyle === 'classic' || !AVATAR_BORDERS.find(b => b.id === borderStyle)) && (
+          <div 
+            className="absolute inset-0 rounded-full border-[3px] pointer-events-none"
+            style={{ 
+              borderColor: theme, 
+              boxShadow: `0 0 14px ${theme}66` 
+            }} 
+          />
+        )}
+
+        {/* ================= STATIC INNER PHOTO (Foto Tetap Diam & Jernih) ================= */}
+        <div className={`${sizeStyles.inner} rounded-full overflow-hidden bg-[#161616] flex items-center justify-center relative z-10 shadow-inner ring-1 ring-black/80 shrink-0`}>
           {avatarUrl ? (
             <img src={avatarUrl} alt={nama} className="w-full h-full object-cover" />
           ) : (
@@ -163,17 +194,18 @@ function PlayerAvatar({
           )}
         </div>
 
+        {/* ================= FRAME EMBELLISHMENTS & BADGES (Z-20) ================= */}
         {/* Nika Series Embellishments */}
         {!isSmall && borderStyle === 'nika' && (
           <>
-            <span className="absolute -bottom-1 -left-1.5 z-20 flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]" title="Sun God Nika Straw Hat">
-              <svg viewBox="0 0 24 24" className="w-5 h-5">
+            <span className="absolute -bottom-1.5 -left-2 z-20 flex items-center justify-center filter drop-shadow-[0_2px_5px_rgba(0,0,0,0.9)]" title="Sun God Nika Straw Hat">
+              <svg viewBox="0 0 24 24" className="w-6 h-6">
                 <ellipse cx="12" cy="15" rx="10" ry="3.5" fill="#eab308" stroke="#a16207" strokeWidth="1" />
                 <path d="M7 14 C7 8 17 8 17 14 Z" fill="#facc15" stroke="#a16207" strokeWidth="1" />
                 <rect x="7" y="12.5" width="10" height="2" fill="#ef4444" rx="0.5" />
               </svg>
             </span>
-            <span className="absolute -top-1 -right-1 z-20 text-[11px] text-amber-300 animate-lightning-flash drop-shadow-[0_0_6px_rgba(251,191,36,0.9)] font-black" title="Nika Lightning">
+            <span className="absolute -top-1.5 -right-1.5 z-20 text-[13px] text-amber-300 animate-lightning-flash drop-shadow-[0_0_8px_rgba(251,191,36,0.9)] font-black" title="Nika Lightning">
               ⚡
             </span>
           </>
@@ -182,13 +214,13 @@ function PlayerAvatar({
         {/* Sasuke Series Embellishments */}
         {!isSmall && borderStyle === 'sasuke' && (
           <>
-            <span className="absolute -top-2 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center pointer-events-none" title="Susanoo Crest">
-              <svg viewBox="0 0 24 12" className="w-6 h-3 text-purple-400 filter drop-shadow-[0_0_6px_rgba(192,132,252,0.9)]">
+            <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center pointer-events-none" title="Susanoo Crest">
+              <svg viewBox="0 0 24 12" className="w-7 h-3.5 text-purple-400 filter drop-shadow-[0_0_8px_rgba(192,132,252,0.9)]">
                 <path d="M2 12 L8 2 L12 7 L16 2 L22 12 Z" fill="currentColor" />
               </svg>
             </span>
-            <span className="absolute -bottom-1 -right-1 z-20 w-4 h-4 rounded-full bg-red-600 border border-black flex items-center justify-center animate-sharingan-spin shadow-[0_0_8px_rgba(239,68,68,0.9)]" title="Sharingan Tomoe">
-              <svg viewBox="0 0 20 20" className="w-3 h-3 text-black">
+            <span className="absolute -bottom-1.5 -right-1.5 z-20 w-4.5 h-4.5 rounded-full bg-red-600 border border-black flex items-center justify-center animate-sharingan-spin shadow-[0_0_10px_rgba(239,68,68,0.9)]" title="Sharingan Tomoe">
+              <svg viewBox="0 0 20 20" className="w-3.5 h-3.5 text-black">
                 <circle cx="10" cy="10" r="2" fill="black" />
                 <circle cx="10" cy="5" r="1.5" fill="black" />
                 <circle cx="6" cy="13" r="1.5" fill="black" />
@@ -201,46 +233,31 @@ function PlayerAvatar({
         {/* Dragon Series Embellishments */}
         {!isSmall && borderStyle === 'dragon' && (
           <>
-            <span className="absolute -top-1.5 -right-1.5 z-20 text-[13px] drop-shadow-[0_0_8px_rgba(245,158,11,0.9)]" title="White Dragon Head">
+            <span className="absolute -top-2 -right-2 z-20 text-[15px] drop-shadow-[0_0_10px_rgba(245,158,11,0.9)]" title="White Dragon Head">
               🐉
             </span>
-            <span className="absolute -bottom-1 -left-1 z-20 w-3 h-3 rounded-full bg-gradient-to-tr from-amber-200 to-white shadow-[0_0_6px_rgba(255,255,255,0.9)] border border-amber-400" title="Dragon Pearl" />
+            <span className="absolute -bottom-1.5 -left-1.5 z-20 w-3.5 h-3.5 rounded-full bg-gradient-to-tr from-amber-200 to-white shadow-[0_0_8px_rgba(255,255,255,0.9)] border border-amber-400" title="Dragon Pearl" />
           </>
         )}
 
         {/* Wang Lin Series Embellishments */}
         {!isSmall && borderStyle === 'wanglin' && (
           <>
-            <span className="absolute -top-1.5 -left-1.5 z-20 text-[12px] drop-shadow-[0_0_8px_rgba(239,68,68,0.9)]" title="Ancient Slaughter Essence">
+            <span className="absolute -top-2 -left-2 z-20 text-[14px] drop-shadow-[0_0_10px_rgba(239,68,68,0.9)]" title="Ancient Slaughter Essence">
               🔥
             </span>
-            <span className="absolute -bottom-1 -right-1 z-20 w-3 h-3 rotate-45 bg-gradient-to-tr from-red-600 to-amber-400 border border-amber-300 shadow-[0_0_6px_rgba(239,68,68,0.9)]" title="Slaughter Domain" />
+            <span className="absolute -bottom-1.5 -right-1.5 z-20 w-3.5 h-3.5 rotate-45 bg-gradient-to-tr from-red-600 to-amber-400 border border-amber-300 shadow-[0_0_8px_rgba(239,68,68,0.9)]" title="Slaughter Domain" />
           </>
         )}
 
         {/* Wang Lin II Cosmic Embellishments */}
         {!isSmall && borderStyle === 'wanglin2' && (
           <>
-            <span className="absolute -top-1.5 -right-1.5 z-20 text-[12px] text-cyan-300 drop-shadow-[0_0_8px_rgba(6,182,212,0.9)] font-black" title="Cosmic Void Domain">
+            <span className="absolute -top-2 -right-2 z-20 text-[14px] text-cyan-300 drop-shadow-[0_0_10px_rgba(6,182,212,0.9)] font-black" title="Cosmic Void Domain">
               ✨
             </span>
-            <span className="absolute -bottom-1 -left-1 z-20 w-3.5 h-3.5 rounded-full bg-gradient-to-tr from-cyan-400 via-blue-600 to-purple-600 shadow-[0_0_8px_rgba(6,182,212,0.9)] border border-white" title="Divine Core" />
+            <span className="absolute -bottom-1.5 -left-1.5 z-20 w-4 h-4 rounded-full bg-gradient-to-tr from-cyan-400 via-blue-600 to-purple-600 shadow-[0_0_10px_rgba(6,182,212,0.9)] border border-white" title="Divine Core" />
           </>
-        )}
-
-        {/* Mini Badges for Champion & Captain styles */}
-        {!isSmall && borderStyle === 'champion' && (
-          <span className="absolute -top-1 -right-1 text-[9px] bg-[#ffd700] text-black rounded-full w-4 h-4 flex items-center justify-center font-black shadow-md border border-black z-20" title="Champion">
-            ★
-          </span>
-        )}
-        {!isSmall && borderStyle === 'captain' && (
-          <span 
-            className="absolute -bottom-1 -left-1 text-[8px] font-black text-black px-1 py-0.2 rounded-sm shadow-md border border-black bg-amber-400 z-20"
-            title="Captain"
-          >
-            C
-          </span>
         )}
       </div>
 
