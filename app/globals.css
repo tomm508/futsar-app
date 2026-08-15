@@ -9,7 +9,7 @@ body {
 
 @keyframes cloud-float {
   0%, 100% { transform: scale(1) rotate(0deg); }
-  50% { transform: scale(1.05) rotate(4deg); }
+  50% { transform: scale(1.08) rotate(6deg); }
 }
 
 @keyframes nika-spin {
@@ -18,18 +18,18 @@ body {
 }
 
 @keyframes lightning-flash {
-  0%, 100% { opacity: 0.3; transform: scale(0.9); }
-  50% { opacity: 1; transform: scale(1.15); }
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.25); }
 }
 
 @keyframes susanoo-flame {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(168,85,247,0.8)); }
-  50% { transform: scale(1.06); filter: drop-shadow(0 0 20px rgba(192,132,252,1)); }
+  0%, 100% { transform: scale(0.98); opacity: 0.75; }
+  50% { transform: scale(1.1); opacity: 1; filter: drop-shadow(0 0 16px rgba(192,132,252,0.9)); }
 }
 
 @keyframes susanoo-pulse {
-  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
-  50% { transform: scale(1.04) rotate(180deg); opacity: 1; }
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.05); }
 }
 
 @keyframes sharingan-spin {
@@ -43,13 +43,13 @@ body {
 }
 
 @keyframes celestial-pulse {
-  0%, 100% { transform: scale(0.97); opacity: 0.85; }
-  50% { transform: scale(1.04); opacity: 1; }
+  0%, 100% { transform: scale(0.95); opacity: 0.75; }
+  50% { transform: scale(1.08); opacity: 1; }
 }
 
 @keyframes flame-flow {
-  0%, 100% { transform: scale(1) rotate(0deg); }
-  50% { transform: scale(1.05) rotate(180deg); }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 @keyframes cosmic-spin {
@@ -57,43 +57,49 @@ body {
   100% { transform: rotate(360deg); }
 }
 
+@keyframes orbit-dot {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .animate-cloud-float {
-  animation: cloud-float 4s ease-in-out infinite;
+  animation: cloud-float 2.5s ease-in-out infinite;
 }
 
 .animate-nika-spin {
-  animation: nika-spin 12s linear infinite;
+  animation: nika-spin 3.5s linear infinite;
 }
 
 .animate-lightning-flash {
-  animation: lightning-flash 1.5s ease-in-out infinite;
+  animation: lightning-flash 1s ease-in-out infinite;
 }
 
 .animate-susanoo-flame {
-  animation: susanoo-flame 3s ease-in-out infinite;
+  animation: susanoo-flame 2s ease-in-out infinite;
 }
 
 .animate-susanoo-pulse {
-  animation: susanoo-pulse 8s ease-in-out infinite;
+  animation: susanoo-pulse 3s linear infinite;
 }
 
 .animate-sharingan-spin {
-  animation: sharingan-spin 12s linear infinite;
+  animation: sharingan-spin 3s linear infinite;
 }
 
 .animate-dragon-orbit {
-  animation: dragon-orbit 16s linear infinite;
+  animation: dragon-orbit 3.5s linear infinite;
 }
 
 .animate-celestial-pulse {
-  animation: celestial-pulse 2.5s ease-in-out infinite;
+  animation: celestial-pulse 2s ease-in-out infinite;
 }
 
 .animate-flame-flow {
-  animation: flame-flow 10s ease-in-out infinite;
+  animation: flame-flow 3s linear infinite;
 }
 
 .animate-cosmic-spin {
-  animation: cosmic-spin 14s linear infinite;
+  animation: cosmic-spin 3s linear infinite;
 }
+
 

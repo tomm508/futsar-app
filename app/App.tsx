@@ -135,15 +135,15 @@ function PlayerAvatar({
   const isOnline = showOnline && user?.lastActive && currentTime > 0 && (currentTime - user.lastActive < 90000);
 
   const sizeStyles = {
-    xs: { wrapper: 'w-[28px] h-[28px]', inner: 'w-[20px] h-[20px] text-[10px]' },
-    sm: { wrapper: 'w-[38px] h-[38px]', inner: 'w-[26px] h-[26px] text-xs' },
-    md: { wrapper: 'w-[52px] h-[52px]', inner: 'w-[36px] h-[36px] text-sm' },
-    lg: { wrapper: 'w-[76px] h-[76px]', inner: 'w-[54px] h-[54px] text-xl' },
-    xl: { wrapper: 'w-[104px] h-[104px]', inner: 'w-[72px] h-[72px] text-2xl' },
-    '2xl': { wrapper: 'w-[124px] h-[124px]', inner: 'w-[86px] h-[86px] text-3xl' }
-  }[size] || { wrapper: 'w-[52px] h-[52px]', inner: 'w-[36px] h-[36px] text-sm' };
+    xs: { wrapper: 'w-[34px] h-[34px]', inner: 'w-[24px] h-[24px] text-[10px]' },
+    sm: { wrapper: 'w-[44px] h-[44px]', inner: 'w-[32px] h-[32px] text-xs' },
+    md: { wrapper: 'w-[56px] h-[56px]', inner: 'w-[40px] h-[40px] text-sm' },
+    lg: { wrapper: 'w-[78px] h-[78px]', inner: 'w-[56px] h-[56px] text-xl' },
+    xl: { wrapper: 'w-[104px] h-[104px]', inner: 'w-[74px] h-[74px] text-2xl' },
+    '2xl': { wrapper: 'w-[128px] h-[128px]', inner: 'w-[90px] h-[90px] text-3xl' }
+  }[size] || { wrapper: 'w-[56px] h-[56px]', inner: 'w-[40px] h-[40px] text-sm' };
 
-  const isSmall = size === 'xs' || size === 'sm';
+  const isSmall = size === 'xs';
 
   return (
     <div 
@@ -156,50 +156,70 @@ function PlayerAvatar({
         {borderStyle === 'nika' && (
           <>
             {/* Outer Solar Flame / Steam Aura */}
-            <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-white via-cyan-300 to-amber-200 blur-[8px] opacity-70 animate-cloud-float pointer-events-none" />
-            {/* Rotating Sun God Nika Frame */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white via-cyan-200 to-amber-300 p-[3.5px] shadow-[0_0_20px_rgba(255,255,255,0.95),0_0_35px_rgba(186,230,253,0.8)] animate-nika-spin pointer-events-none" />
-            <div className="absolute inset-[3px] rounded-full border border-amber-300/70 pointer-events-none" />
+            <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-white via-cyan-300 to-amber-300 blur-[6px] opacity-75 animate-cloud-float pointer-events-none" />
+            {/* Rotating Sun God Nika Frame (Vivid High Contrast Conic) */}
+            <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,#ffffff,#38bdf8,#fef08a,#f59e0b,#38bdf8,#ffffff)] p-[3.5px] shadow-[0_0_16px_rgba(255,255,255,0.95),0_0_24px_rgba(56,189,248,0.85)] animate-nika-spin pointer-events-none" />
+            {/* Orbiting Solar Lightning Sparkle */}
+            <div className="absolute inset-0 rounded-full animate-nika-spin pointer-events-none">
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-[0_0_8px_#ffffff,0_0_14px_#fde047] block" />
+            </div>
+            <div className="absolute inset-[3px] rounded-full border border-amber-300/80 pointer-events-none" />
           </>
         )}
 
         {borderStyle === 'sasuke' && (
           <>
             {/* Outer Susanoo Chakra Aura */}
-            <div className="absolute -inset-2 rounded-full bg-gradient-to-tr from-purple-900 via-purple-600 to-indigo-800 blur-[10px] opacity-80 animate-susanoo-flame pointer-events-none" />
-            {/* Pulsing & Rotating Susanoo Dark Flame Ring */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-purple-950 via-purple-500 to-indigo-950 p-[3.5px] ring-2 ring-purple-400 shadow-[0_0_24px_rgba(168,85,247,0.95),0_0_40px_rgba(126,34,206,0.75)] animate-susanoo-pulse pointer-events-none" />
-            <div className="absolute inset-[3px] rounded-full border border-purple-300/70 pointer-events-none" />
+            <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-purple-600 via-indigo-500 to-fuchsia-600 blur-[7px] opacity-80 animate-susanoo-flame pointer-events-none" />
+            {/* Pulsing & Rotating Susanoo Dark Flame Ring (Vivid Conic) */}
+            <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,#c084fc,#9333ea,#4f46e5,#f43f5e,#9333ea,#c084fc)] p-[3.5px] shadow-[0_0_18px_rgba(168,85,247,0.95),0_0_26px_rgba(126,34,206,0.8)] animate-susanoo-pulse pointer-events-none" />
+            {/* Orbiting Susanoo Purple Spark */}
+            <div className="absolute inset-0 rounded-full animate-sharingan-spin pointer-events-none">
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-purple-200 shadow-[0_0_8px_#c084fc,0_0_14px_#a855f7] block" />
+            </div>
+            <div className="absolute inset-[3px] rounded-full border border-purple-300/80 pointer-events-none" />
           </>
         )}
 
         {borderStyle === 'dragon' && (
           <>
             {/* Outer Dragon Shimmer Aura */}
-            <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-amber-500 via-yellow-200 to-amber-600 blur-[8px] opacity-75 animate-celestial-pulse pointer-events-none" />
-            {/* Rotating Imperial Dragon Golden Ring */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-100 to-amber-600 p-[3.5px] shadow-[0_0_22px_rgba(245,158,11,0.95),0_0_38px_rgba(251,191,36,0.8)] animate-dragon-orbit pointer-events-none" />
-            <div className="absolute inset-[3px] rounded-full border border-yellow-200/80 pointer-events-none" />
+            <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 blur-[6px] opacity-80 animate-celestial-pulse pointer-events-none" />
+            {/* Rotating Imperial Dragon Golden Ring (Vivid Conic) */}
+            <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,#fbbf24,#f59e0b,#ffffff,#fef08a,#d97706,#fbbf24)] p-[3.5px] shadow-[0_0_18px_rgba(245,158,11,0.95),0_0_28px_rgba(251,191,36,0.85)] animate-dragon-orbit pointer-events-none" />
+            {/* Orbiting Golden Dragon Pearl */}
+            <div className="absolute inset-0 rounded-full animate-dragon-orbit pointer-events-none">
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-yellow-100 shadow-[0_0_8px_#fbbf24,0_0_14px_#fde047] block" />
+            </div>
+            <div className="absolute inset-[3px] rounded-full border border-yellow-200/90 pointer-events-none" />
           </>
         )}
 
         {borderStyle === 'wanglin' && (
           <>
             {/* Outer Ancient Slaughter Domain Aura */}
-            <div className="absolute -inset-1.5 rounded-full bg-gradient-to-br from-red-600 via-amber-500 to-red-800 blur-[8px] opacity-80 animate-celestial-pulse pointer-events-none" />
-            {/* Flowing Slaughter Flame Ring */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-700 via-amber-400 to-red-600 p-[3.5px] shadow-[0_0_22px_rgba(239,68,68,0.95),0_0_36px_rgba(217,119,6,0.7)] animate-flame-flow pointer-events-none" />
-            <div className="absolute inset-[3px] rounded-full border border-amber-300/70 pointer-events-none" />
+            <div className="absolute -inset-1.5 rounded-full bg-gradient-to-br from-red-600 via-amber-500 to-red-800 blur-[6px] opacity-80 animate-celestial-pulse pointer-events-none" />
+            {/* Flowing Slaughter Flame Ring (Vivid Conic) */}
+            <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,#ef4444,#f59e0b,#991b1b,#fca5a5,#dc2626,#ef4444)] p-[3.5px] shadow-[0_0_18px_rgba(239,68,68,0.95),0_0_28px_rgba(217,119,6,0.8)] animate-flame-flow pointer-events-none" />
+            {/* Orbiting Slaughter Spark */}
+            <div className="absolute inset-0 rounded-full animate-flame-flow pointer-events-none">
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-amber-100 shadow-[0_0_8px_#ef4444,0_0_14px_#f59e0b] block" />
+            </div>
+            <div className="absolute inset-[3px] rounded-full border border-amber-300/80 pointer-events-none" />
           </>
         )}
 
         {borderStyle === 'wanglin2' && (
           <>
             {/* Outer Cosmic Void Energy */}
-            <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-blue-600 via-cyan-400 to-purple-600 blur-[10px] opacity-85 animate-cosmic-spin pointer-events-none" />
-            {/* Cosmic Void Domain Rotating Core Ring */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-slate-950 via-blue-900 to-purple-950 p-[4px] ring-2 ring-cyan-300 shadow-[0_0_28px_rgba(59,130,246,0.95),0_0_45px_rgba(147,51,234,0.8)] animate-cosmic-spin pointer-events-none" />
-            <div className="absolute inset-[3.5px] rounded-full border border-cyan-400/80 pointer-events-none" />
+            <div className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-fuchsia-500 blur-[7px] opacity-85 animate-pulse pointer-events-none" />
+            {/* Cosmic Void Domain Rotating Core Ring (Vivid Conic) */}
+            <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,#38bdf8,#818cf8,#ec4899,#06b6d4,#38bdf8)] p-[3.5px] shadow-[0_0_20px_rgba(56,189,248,0.95),0_0_30px_rgba(147,51,234,0.85)] animate-cosmic-spin pointer-events-none" />
+            {/* Orbiting Cosmic Divine Energy Bead */}
+            <div className="absolute inset-0 rounded-full animate-cosmic-spin pointer-events-none">
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-cyan-200 shadow-[0_0_10px_#38bdf8,0_0_18px_#06b6d4] block" />
+            </div>
+            <div className="absolute inset-[3px] rounded-full border border-cyan-300/90 pointer-events-none" />
           </>
         )}
 
@@ -2874,10 +2894,10 @@ export default function Page() {
                             return (
                               <div key={msg.id} className={`flex gap-2.5 ${isOwn ? 'justify-end' : 'justify-start'} group items-end`}>
                                 {!isOwn && (
-                                  <div className="shrink-0">
+                                  <div className="shrink-0 mb-0.5">
                                     <PlayerAvatar 
                                       user={senderUser} 
-                                      size="xs" 
+                                      size="sm" 
                                       onClick={() => setSelectedMember(senderUser)}
                                       title={`Lihat profil ${msg.senderName}`}
                                     />
@@ -2931,10 +2951,10 @@ export default function Page() {
                                 </div>
 
                                 {isOwn && user && (
-                                  <div className="shrink-0">
+                                  <div className="shrink-0 mb-0.5">
                                     <PlayerAvatar 
                                       user={user} 
-                                      size="xs" 
+                                      size="sm" 
                                       onClick={() => setSelectedMember(user)}
                                       title="Lihat profil saya"
                                     />
