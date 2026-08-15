@@ -1313,8 +1313,12 @@ export default function Page() {
           <nav className="z-20 px-4 md:px-8 py-4 flex justify-between items-center bg-black/40 backdrop-blur-md border-b border-[#d4af37]/20 relative">
             <div className="flex items-center gap-3">
               {/* Logo Futsar */}
-              <div className="w-10 h-10 bg-gradient-to-br from-[#ffe89c] via-[#d4af37] to-[#b8911f] rounded-xl flex items-center justify-center text-[#0a0a0a] shadow-[0_0_15px_rgba(212,175,55,0.4)] border border-[#ffe89c]/40">
-                <Shirt size={22} className="stroke-[2.5]" />
+              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(212,175,55,0.45)] border border-[#d4af37]/60 bg-black/60 flex items-center justify-center p-0.5 group">
+                <img 
+                  src="/futsar-logo.jpg" 
+                  alt="Futsar Logo" 
+                  className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(212,175,55,0.6)] group-hover:scale-110 transition-transform duration-300" 
+                />
               </div>
               <span className="font-black tracking-[4px] text-[#d4af37] text-xl md:text-2xl drop-shadow-[0_2px_10px_rgba(212,175,55,0.3)]">
                 FUTSAR
