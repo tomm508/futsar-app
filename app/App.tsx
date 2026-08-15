@@ -25,14 +25,47 @@ const PROFILE_THEMES = [
   { id: 'cyan', name: 'Cyber Cyan', color: '#00b4d8', border: 'border-[#00b4d8]', text: 'text-[#00b4d8]', bg: 'bg-[#00b4d8]', glow: 'rgba(0,180,216,0.4)' },
 ];
 
-const AVATAR_BORDERS = [
-  { id: 'classic', name: 'Solid Klasik', price: 0, category: 'Basic', desc: 'Ring solid tegas selaras warna tema' },
-  { id: 'nika', name: 'Nika', price: 25000, category: 'One Piece Series', desc: 'Aura kebebasan sang dewa matahari' },
-  { id: 'sasuke', name: 'Sasuke', price: 15000, category: 'Naruto Series', desc: 'Cakra ungu dengan mata kutukan' },
-  { id: 'dragon', name: 'White Chinese Dragon', price: 15000, category: 'Dragon Series', desc: 'Naga putih bersinar' },
-  { id: 'wanglin', name: 'Wang Lin', price: 15000, category: 'Renegade Series', desc: 'Aura spiritual kuno' },
-  { id: 'wanglin2', name: 'Wang Lin II', price: 25000, category: 'Renegade Series', desc: 'Evolusi aura spiritual tingkat dewa' },
+export type StyleItemConfig = {
+  id: string;
+  name?: string;
+  price: number;
+  category?: string;
+  desc?: string;
+  isAvailable?: boolean;
+};
+
+export type CustomVoucher = {
+  id: string;
+  code: string;
+  rewardPoints: number;
+  description: string;
+  isActive: boolean;
+  createdAt?: string;
+};
+
+const DEFAULT_AVATAR_BORDERS: StyleItemConfig[] = [
+  { id: 'classic', name: 'Solid Klasik', price: 0, category: 'Basic', desc: 'Ring solid tegas selaras warna tema', isAvailable: true },
+  { id: 'nika', name: 'Nika', price: 25000, category: 'One Piece Series', desc: 'Aura kebebasan sang dewa matahari', isAvailable: true },
+  { id: 'sasuke', name: 'Sasuke', price: 15000, category: 'Naruto Series', desc: 'Cakra ungu dengan mata kutukan', isAvailable: true },
+  { id: 'dragon', name: 'White Chinese Dragon', price: 15000, category: 'Dragon Series', desc: 'Naga putih bersinar', isAvailable: true },
+  { id: 'wanglin', name: 'Wang Lin', price: 15000, category: 'Renegade Series', desc: 'Aura spiritual kuno', isAvailable: true },
+  { id: 'wanglin2', name: 'Wang Lin II', price: 25000, category: 'Renegade Series', desc: 'Evolusi aura spiritual tingkat dewa', isAvailable: true },
 ];
+
+const AVATAR_BORDERS = DEFAULT_AVATAR_BORDERS;
+
+export const getMergedBorders = (settings?: AppSettings): StyleItemConfig[] => {
+  if (!settings?.styleList || settings.styleList.length === 0) {
+    return DEFAULT_AVATAR_BORDERS;
+  }
+  return DEFAULT_AVATAR_BORDERS.map(def => {
+    const custom = settings.styleList?.find(s => s.id === def.id);
+    if (custom) {
+      return { ...def, ...custom };
+    }
+    return def;
+  });
+};
 
 type ChatMessage = {
   id: string;
@@ -368,6 +401,9 @@ type AppSettings = {
   gallery: GalleryPhoto[];
   adminWa?: string;
   adminPassword?: string;
+  dailyClaimPoints?: number;
+  styleList?: StyleItemConfig[];
+  customVouchers?: CustomVoucher[];
 };
 
 const defaultSettings: AppSettings = {
@@ -378,6 +414,16 @@ const defaultSettings: AppSettings = {
   adminPassword: 'Admin01',
   bgVideoUrl: '/logo-futsar.mp4',
   bgInsideUrl: '/logo-futsar.mp4',
+  dailyClaimPoints: 1000,
+  styleList: DEFAULT_AVATAR_BORDERS,
+  customVouchers: [
+    { id: 'v1', code: 'FUTSARJUARA', rewardPoints: 5000, description: 'Bonus Selamat Datang', isActive: true },
+    { id: 'v2', code: 'NIKA2026', rewardPoints: 10000, description: 'Series One Piece Promo', isActive: true },
+    { id: 'v3', code: 'SASUKE2026', rewardPoints: 10000, description: 'Series Naruto Promo', isActive: true },
+    { id: 'v4', code: 'DRAGON2026', rewardPoints: 10000, description: 'Series Dragon Promo', isActive: true },
+    { id: 'v5', code: 'WANGLIN2026', rewardPoints: 15000, description: 'Series Renegade Promo', isActive: true },
+    { id: 'v6', code: 'FUTSARSTYLE', rewardPoints: 5000, description: 'Bonus Spesial Futsar Style', isActive: true }
+  ],
   gallery: [],
   jadwalList: [
     {
@@ -553,22 +599,23 @@ export default function Page() {
   const handleClaimDailyPoints = async () => {
     if (!user) return;
     if (user.role === 'admin') {
-      alert('Admin memiliki akses tak terbatas ke semua fitur & border.');
+      alert('Admin memiliki akses tak terbatas ke semua fitur & style.');
       return;
     }
 
     const todayStr = new Date().toDateString();
     const lastClaim = localStorage.getItem(`daily_claim_${user.wa}`);
+    const claimAmount = settings.dailyClaimPoints || 1000;
     if (lastClaim === todayStr) {
-      alert('Kamu sudah klaim bonus harian hari ini (+1.000 Poin)! Silakan kembali besok.');
+      alert(`Kamu sudah klaim bonus harian hari ini (+${claimAmount.toLocaleString()} Poin)! Silakan kembali besok.`);
       return;
     }
 
     try {
-      const newPoints = (user.points || 0) + 1000;
+      const newPoints = (user.points || 0) + claimAmount;
       await updateDoc(doc(db, "users", user.wa), { points: newPoints });
       localStorage.setItem(`daily_claim_${user.wa}`, todayStr);
-      alert('🎉 Hore! Berhasil klaim +1.000 Poin Harian!');
+      alert(`🎉 Hore! Berhasil klaim +${claimAmount.toLocaleString()} Poin Harian Futsar Style!`);
     } catch (e) {
       console.error(e);
       alert('Gagal klaim poin. Coba beberapa saat lagi.');
@@ -583,24 +630,35 @@ export default function Page() {
       return;
     }
 
-    const vouchers: Record<string, number> = {
+    const defaultVouchers: Record<string, number> = {
       'FUTSARJUARA': 5000,
       'NIKA2026': 10000,
       'SASUKE2026': 10000,
       'DRAGON2026': 10000,
       'WANGLIN2026': 15000,
       'FUTSALASIK': 3000,
-      'DECOJUARA': 5000,
+      'FUTSARSTYLE': 5000,
       'POINBONUS': 5000,
       'FUTSAR2026': 10000
     };
 
-    if (!vouchers[code]) {
+    const customVoucherMap: Record<string, number> = {};
+    if (settings.customVouchers) {
+      settings.customVouchers.forEach(v => {
+        if (v.isActive !== false) {
+          customVoucherMap[v.code.trim().toUpperCase()] = v.rewardPoints;
+        }
+      });
+    }
+
+    const allVouchers = { ...defaultVouchers, ...customVoucherMap };
+
+    if (!allVouchers[code]) {
       setVoucherFeedback({ type: 'error', message: 'Kode voucher tidak valid atau sudah kadaluarsa.' });
       return;
     }
 
-    const reward = vouchers[code];
+    const reward = allVouchers[code];
     const redeemedKey = `voucher_${code}_${user.wa}`;
     if (localStorage.getItem(redeemedKey)) {
       setVoucherFeedback({ type: 'error', message: `Kamu sudah pernah menukarkan kode voucher ${code}!` });
@@ -614,7 +672,7 @@ export default function Page() {
       }
       localStorage.setItem(redeemedKey, 'true');
       setVoucherInput('');
-      setVoucherFeedback({ type: 'success', message: `Selamat! Berhasil menukarkan kode ${code} dan mendapatkan +${reward.toLocaleString()} Poin!` });
+      setVoucherFeedback({ type: 'success', message: `Selamat! Berhasil menukarkan kode ${code} dan mendapatkan +${reward.toLocaleString()} Poin Futsar Style!` });
     } catch (e) {
       console.error(e);
       setVoucherFeedback({ type: 'error', message: 'Gagal menukarkan voucher. Silakan coba lagi.' });
@@ -1461,8 +1519,8 @@ export default function Page() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold mb-1 text-white">Toko Deco</h3>
-                    <p className="text-xs text-gray-500">Beli & pakai border profil</p>
+                    <h3 className="text-lg font-bold mb-1 text-white">Futsar Style</h3>
+                    <p className="text-xs text-gray-500">Beli & pakai style profil</p>
                   </div>
                 </button>
                 <button onClick={() => setActiveModal('info')} className="bg-[#111]/60 backdrop-blur-md border border-[#222] rounded-2xl p-6 flex flex-col justify-between group hover:border-[#d4af37] transition-colors text-left active:scale-[0.98]">
@@ -1976,19 +2034,19 @@ export default function Page() {
             )}
 
 
-            {/* DECO MODAL - UPGRADE AKUN & CUSTOM BORDERS */}
+            {/* FUTSAR STYLE MODAL - KOLEKSI STYLE & CUSTOM BORDERS */}
             {activeModal === 'deco' && (
               <>
-                {/* Header matching video */}
+                {/* Header Futsar Style */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-2 mb-4 border-b border-[#333] pb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center font-black text-black text-xl shadow-[0_0_15px_rgba(245,158,11,0.5)] border border-amber-300">
-                      D
+                      <Sparkles size={22} className="text-black" />
                     </div>
                     <div>
-                      <span className="text-[10px] font-black tracking-widest text-[#ffd700] uppercase block">DASHBOARD</span>
-                      <h2 className="text-white text-xl sm:text-2xl font-black tracking-tight">Upgrade akun lo</h2>
-                      <p className="text-[11px] text-[#888]">Pilih paket, bayar, aktivasi Instan.</p>
+                      <span className="text-[10px] font-black tracking-widest text-[#ffd700] uppercase block">FUTSAR STYLE</span>
+                      <h2 className="text-white text-xl sm:text-2xl font-black tracking-tight">Koleksi Efek & Avatar</h2>
+                      <p className="text-[11px] text-[#888]">Pilih style border avatar eksklusif & klaim poin klub.</p>
                     </div>
                   </div>
 
@@ -2007,7 +2065,7 @@ export default function Page() {
                       <button 
                         onClick={handleClaimDailyPoints}
                         className="px-2.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-[11px] font-bold shadow-md transition-all active:scale-95 cursor-pointer flex items-center gap-1"
-                        title="Klaim bonus +1.000 poin harian"
+                        title={`Klaim bonus +${(settings.dailyClaimPoints || 1000).toLocaleString()} poin harian`}
                       >
                         🎁 Klaim Harian
                       </button>
@@ -2025,7 +2083,7 @@ export default function Page() {
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <Sparkles size={14} /> Deco
+                    <Sparkles size={14} /> Style Toko
                   </button>
                   <button
                     onClick={() => setDecoTab('kado')}
@@ -2035,7 +2093,7 @@ export default function Page() {
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <Gift size={14} /> Kado
+                    <Gift size={14} /> Kirim Kado
                   </button>
                   <button
                     onClick={() => setDecoTab('voucher')}
@@ -2045,7 +2103,7 @@ export default function Page() {
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <Ticket size={14} /> Voucher
+                    <Ticket size={14} /> Kode Voucher
                   </button>
                   <button
                     onClick={() => setDecoTab('riwayat')}
@@ -2055,11 +2113,11 @@ export default function Page() {
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <Clock size={14} /> Riwayat
+                    <Clock size={14} /> Koleksi & Riwayat
                   </button>
                 </div>
 
-                {/* TAB 1: DECO (Avatar Border Store) */}
+                {/* TAB 1: FUTSAR STYLE (Avatar Border Store) */}
                 {decoTab === 'deco' && (
                   <div className="flex flex-col gap-6 max-h-[55vh] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-[#ffd700]">
                     {/* One Piece Series */}
@@ -2069,11 +2127,15 @@ export default function Page() {
                         <h3 className="text-white font-black text-sm uppercase tracking-wider">One Piece Series</h3>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-                        {AVATAR_BORDERS.filter(b => b.category === 'One Piece Series').map((border) => {
+                        {getMergedBorders(settings).filter(b => b.category === 'One Piece Series').map((border) => {
                           const isOwned = user?.ownedBorders?.includes(border.id) || user?.role === 'admin';
                           const isActive = user?.avatarBorder === border.id;
+                          const isAvailable = border.isAvailable !== false;
                           return (
                             <div key={border.id} className={`bg-[#181818] p-4 rounded-2xl flex flex-col items-center gap-3 text-center border-2 transition-all relative overflow-hidden ${isActive ? 'border-[#ffd700] bg-[#ffd700]/5 shadow-[0_0_20px_rgba(255,215,0,0.15)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
+                              {!isAvailable && (
+                                <span className="absolute top-2 right-2 bg-red-500/80 text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase z-10">Tutup</span>
+                              )}
                               <div className="py-2 flex items-center justify-center">
                                 <PlayerAvatar user={user} size="2xl" customBorder={border.id} />
                               </div>
@@ -2093,6 +2155,8 @@ export default function Page() {
                                   <button disabled className="w-full py-2.5 bg-[#ffd700] text-black font-black rounded-xl text-xs uppercase cursor-default shadow-md">Sedang Dipakai</button>
                                 ) : isOwned ? (
                                   <button onClick={() => handleEquipBorder(border.id)} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl text-xs font-bold uppercase transition-all cursor-pointer">Pakai</button>
+                                ) : !isAvailable ? (
+                                  <button disabled className="w-full py-2.5 bg-gray-800 text-gray-500 font-bold rounded-xl text-xs uppercase cursor-not-allowed">Stok Habis</button>
                                 ) : (
                                   <button 
                                     onClick={() => handleBuyBorder(border.id, border.price)}
@@ -2115,11 +2179,15 @@ export default function Page() {
                         <h3 className="text-white font-black text-sm uppercase tracking-wider">Naruto Series</h3>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-                        {AVATAR_BORDERS.filter(b => b.category === 'Naruto Series').map((border) => {
+                        {getMergedBorders(settings).filter(b => b.category === 'Naruto Series').map((border) => {
                           const isOwned = user?.ownedBorders?.includes(border.id) || user?.role === 'admin';
                           const isActive = user?.avatarBorder === border.id;
+                          const isAvailable = border.isAvailable !== false;
                           return (
                             <div key={border.id} className={`bg-[#181818] p-4 rounded-2xl flex flex-col items-center gap-3 text-center border-2 transition-all relative overflow-hidden ${isActive ? 'border-purple-400 bg-purple-500/5 shadow-[0_0_20px_rgba(168,85,247,0.15)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
+                              {!isAvailable && (
+                                <span className="absolute top-2 right-2 bg-red-500/80 text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase z-10">Tutup</span>
+                              )}
                               <div className="py-2 flex items-center justify-center">
                                 <PlayerAvatar user={user} size="2xl" customBorder={border.id} />
                               </div>
@@ -2139,6 +2207,8 @@ export default function Page() {
                                   <button disabled className="w-full py-2.5 bg-purple-500 text-white font-black rounded-xl text-xs uppercase cursor-default shadow-md">Sedang Dipakai</button>
                                 ) : isOwned ? (
                                   <button onClick={() => handleEquipBorder(border.id)} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl text-xs font-bold uppercase transition-all cursor-pointer">Pakai</button>
+                                ) : !isAvailable ? (
+                                  <button disabled className="w-full py-2.5 bg-gray-800 text-gray-500 font-bold rounded-xl text-xs uppercase cursor-not-allowed">Stok Habis</button>
                                 ) : (
                                   <button 
                                     onClick={() => handleBuyBorder(border.id, border.price)}
@@ -2161,11 +2231,15 @@ export default function Page() {
                         <h3 className="text-white font-black text-sm uppercase tracking-wider">Dragon</h3>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-                        {AVATAR_BORDERS.filter(b => b.category === 'Dragon Series').map((border) => {
+                        {getMergedBorders(settings).filter(b => b.category === 'Dragon Series').map((border) => {
                           const isOwned = user?.ownedBorders?.includes(border.id) || user?.role === 'admin';
                           const isActive = user?.avatarBorder === border.id;
+                          const isAvailable = border.isAvailable !== false;
                           return (
                             <div key={border.id} className={`bg-[#181818] p-4 rounded-2xl flex flex-col items-center gap-3 text-center border-2 transition-all relative overflow-hidden ${isActive ? 'border-amber-400 bg-amber-500/5 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
+                              {!isAvailable && (
+                                <span className="absolute top-2 right-2 bg-red-500/80 text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase z-10">Tutup</span>
+                              )}
                               <div className="py-2 flex items-center justify-center">
                                 <PlayerAvatar user={user} size="2xl" customBorder={border.id} />
                               </div>
@@ -2185,6 +2259,8 @@ export default function Page() {
                                   <button disabled className="w-full py-2.5 bg-amber-500 text-black font-black rounded-xl text-xs uppercase cursor-default shadow-md">Sedang Dipakai</button>
                                 ) : isOwned ? (
                                   <button onClick={() => handleEquipBorder(border.id)} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl text-xs font-bold uppercase transition-all cursor-pointer">Pakai</button>
+                                ) : !isAvailable ? (
+                                  <button disabled className="w-full py-2.5 bg-gray-800 text-gray-500 font-bold rounded-xl text-xs uppercase cursor-not-allowed">Stok Habis</button>
                                 ) : (
                                   <button 
                                     onClick={() => handleBuyBorder(border.id, border.price)}
@@ -2207,11 +2283,15 @@ export default function Page() {
                         <h3 className="text-white font-black text-sm uppercase tracking-wider">Renegade Series</h3>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-                        {AVATAR_BORDERS.filter(b => b.category === 'Renegade Series').map((border) => {
+                        {getMergedBorders(settings).filter(b => b.category === 'Renegade Series').map((border) => {
                           const isOwned = user?.ownedBorders?.includes(border.id) || user?.role === 'admin';
                           const isActive = user?.avatarBorder === border.id;
+                          const isAvailable = border.isAvailable !== false;
                           return (
                             <div key={border.id} className={`bg-[#181818] p-4 rounded-2xl flex flex-col items-center gap-3 text-center border-2 transition-all relative overflow-hidden ${isActive ? 'border-cyan-400 bg-cyan-500/5 shadow-[0_0_20px_rgba(6,182,212,0.15)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
+                              {!isAvailable && (
+                                <span className="absolute top-2 right-2 bg-red-500/80 text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase z-10">Tutup</span>
+                              )}
                               <div className="py-2 flex items-center justify-center">
                                 <PlayerAvatar user={user} size="2xl" customBorder={border.id} />
                               </div>
@@ -2231,6 +2311,8 @@ export default function Page() {
                                   <button disabled className="w-full py-2.5 bg-cyan-500 text-black font-black rounded-xl text-xs uppercase cursor-default shadow-md">Sedang Dipakai</button>
                                 ) : isOwned ? (
                                   <button onClick={() => handleEquipBorder(border.id)} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl text-xs font-bold uppercase transition-all cursor-pointer">Pakai</button>
+                                ) : !isAvailable ? (
+                                  <button disabled className="w-full py-2.5 bg-gray-800 text-gray-500 font-bold rounded-xl text-xs uppercase cursor-not-allowed">Stok Habis</button>
                                 ) : (
                                   <button 
                                     onClick={() => handleBuyBorder(border.id, border.price)}
@@ -2253,7 +2335,7 @@ export default function Page() {
                         <h3 className="text-white font-black text-sm uppercase tracking-wider">Basic Series</h3>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-                        {AVATAR_BORDERS.filter(b => b.category === 'Basic').map((border) => {
+                        {getMergedBorders(settings).filter(b => b.category === 'Basic').map((border) => {
                           const isActive = user?.avatarBorder === border.id || (!user?.avatarBorder && border.id === 'classic');
                           return (
                             <div key={border.id} className={`bg-[#181818] p-4 rounded-2xl flex flex-col items-center gap-3 text-center border-2 transition-all relative overflow-hidden ${isActive ? 'border-[#d4af37] bg-[#d4af37]/5 shadow-[0_0_20px_rgba(212,175,55,0.15)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
@@ -2343,7 +2425,7 @@ export default function Page() {
                             onChange={(e) => setKadoBorderId(e.target.value)}
                             className="w-full bg-[#111] border border-[#444] rounded-xl px-3 py-2.5 text-sm text-white focus:border-purple-400 focus:outline-none"
                           >
-                            {AVATAR_BORDERS.filter(b => b.price > 0).map(b => (
+                            {getMergedBorders(settings).filter(b => b.price > 0 && b.isAvailable !== false).map(b => (
                               <option key={b.id} value={b.id}>{b.name} - {b.category} ({b.price.toLocaleString()} Poin)</option>
                             ))}
                           </select>
@@ -2372,7 +2454,7 @@ export default function Page() {
                       <div className="flex flex-col sm:flex-row gap-2.5 mb-4">
                         <input
                           type="text"
-                          placeholder="Masukkan Kode (cth: FUTSARJUARA)"
+                          placeholder="Masukkan Kode (cth: FUTSARSTYLE)"
                           value={voucherInput}
                           onChange={(e) => setVoucherInput(e.target.value)}
                           className="flex-1 bg-[#111] border border-[#444] rounded-xl px-3 py-2.5 text-sm text-white uppercase font-bold tracking-wider focus:border-[#ffd700] focus:outline-none"
@@ -2401,34 +2483,20 @@ export default function Page() {
                         <Sparkles size={14} className="text-amber-400" /> Kode Voucher Aktif
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <div className="bg-[#1e1e1e] p-3 rounded-xl border border-[#333] flex justify-between items-center">
-                          <div>
-                            <span className="font-mono font-black text-sm text-[#ffd700]">FUTSARJUARA</span>
-                            <p className="text-[10px] text-gray-400">+5.000 Poin Selamat Datang</p>
+                        {(settings.customVouchers && settings.customVouchers.length > 0 ? settings.customVouchers.filter(v => v.isActive !== false) : [
+                          { id: 'v1', code: 'FUTSARSTYLE', rewardPoints: 5000, description: 'Bonus Spesial Futsar Style' },
+                          { id: 'v2', code: 'NIKA2026', rewardPoints: 10000, description: 'Series One Piece Promo' },
+                          { id: 'v3', code: 'SASUKE2026', rewardPoints: 10000, description: 'Series Naruto Promo' },
+                          { id: 'v4', code: 'DRAGON2026', rewardPoints: 10000, description: 'Dragon Series Promo' }
+                        ]).map((v) => (
+                          <div key={v.id || v.code} className="bg-[#1e1e1e] p-3 rounded-xl border border-[#333] flex justify-between items-center">
+                            <div>
+                              <span className="font-mono font-black text-sm text-[#ffd700]">{v.code}</span>
+                              <p className="text-[10px] text-gray-400">+{v.rewardPoints.toLocaleString()} Poin • {v.description}</p>
+                            </div>
+                            <button onClick={() => setVoucherInput(v.code)} className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded font-bold uppercase cursor-pointer">Pakai</button>
                           </div>
-                          <button onClick={() => setVoucherInput('FUTSARJUARA')} className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded font-bold uppercase">Pakai</button>
-                        </div>
-                        <div className="bg-[#1e1e1e] p-3 rounded-xl border border-[#333] flex justify-between items-center">
-                          <div>
-                            <span className="font-mono font-black text-sm text-cyan-400">NIKA2026</span>
-                            <p className="text-[10px] text-gray-400">+10.000 Poin Series One Piece</p>
-                          </div>
-                          <button onClick={() => setVoucherInput('NIKA2026')} className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded font-bold uppercase">Pakai</button>
-                        </div>
-                        <div className="bg-[#1e1e1e] p-3 rounded-xl border border-[#333] flex justify-between items-center">
-                          <div>
-                            <span className="font-mono font-black text-sm text-purple-400">SASUKE2026</span>
-                            <p className="text-[10px] text-gray-400">+10.000 Poin Series Naruto</p>
-                          </div>
-                          <button onClick={() => setVoucherInput('SASUKE2026')} className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded font-bold uppercase">Pakai</button>
-                        </div>
-                        <div className="bg-[#1e1e1e] p-3 rounded-xl border border-[#333] flex justify-between items-center">
-                          <div>
-                            <span className="font-mono font-black text-sm text-amber-300">DRAGON2026</span>
-                            <p className="text-[10px] text-gray-400">+10.000 Poin Dragon Special</p>
-                          </div>
-                          <button onClick={() => setVoucherInput('DRAGON2026')} className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded font-bold uppercase">Pakai</button>
-                        </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -2440,7 +2508,7 @@ export default function Page() {
                     <div className="bg-[#181818] p-4 rounded-2xl border border-[#333]">
                       <h3 className="text-white font-black text-sm uppercase tracking-wider mb-3">Koleksi Border Kamu</h3>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {AVATAR_BORDERS.filter(b => (user?.ownedBorders || ['classic']).includes(b.id) || b.id === 'classic' || user?.role === 'admin').map((border) => {
+                        {getMergedBorders(settings).filter(b => (user?.ownedBorders || ['classic']).includes(b.id) || b.id === 'classic' || user?.role === 'admin').map((border) => {
                           const isActive = user?.avatarBorder === border.id || (!user?.avatarBorder && border.id === 'classic');
                           return (
                             <div key={border.id} className="bg-[#121212] p-3 rounded-xl border border-[#2a2a2a] flex flex-col items-center text-center gap-2">
@@ -2449,7 +2517,7 @@ export default function Page() {
                               {isActive ? (
                                 <span className="text-[10px] font-black text-[#ffd700] uppercase bg-[#ffd700]/10 px-2 py-0.5 rounded-full border border-[#ffd700]/30">Aktif</span>
                               ) : (
-                                <button onClick={() => handleEquipBorder(border.id)} className="text-[10px] font-bold text-white bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-lg uppercase w-full">Gunakan</button>
+                                <button onClick={() => handleEquipBorder(border.id)} className="text-[10px] font-bold text-white bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-lg uppercase w-full cursor-pointer">Gunakan</button>
                               )}
                             </div>
                           );
@@ -2471,7 +2539,7 @@ export default function Page() {
 
                 <div className="mt-4 pt-3 border-t border-[#333]">
                   <button onClick={() => setActiveModal(null)} className="w-full bg-white/5 hover:bg-white/10 text-white border border-[#444] p-3 rounded-xl text-xs font-bold uppercase transition-all active:scale-95 cursor-pointer">
-                    Tutup Dashboard Deco
+                    Tutup Futsar Style
                   </button>
                 </div>
               </>
@@ -3352,6 +3420,99 @@ function AdminDashboard({
     }
   };
 
+  const handleDailyPointsSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const pts = parseInt(fd.get('dailyClaimPoints') as string, 10) || 1000;
+    onUpdateSettings({ ...settings, dailyClaimPoints: pts });
+    alert('Pengaturan poin klaim harian berhasil disimpan!');
+  };
+
+  const handleUpdateBorderPrice = (borderId: string) => {
+    const currentList = getMergedBorders(settings);
+    const border = currentList.find(b => b.id === borderId);
+    if (!border) return;
+
+    const input = prompt(`Atur harga baru untuk ${border.name} (Rp / Poin):`, String(border.price));
+    if (input !== null && !isNaN(Number(input))) {
+      const newPrice = Math.max(0, parseInt(input, 10));
+      const existingConfigs = settings.styleList || [];
+      const index = existingConfigs.findIndex(c => c.id === borderId);
+
+      let updatedList: StyleItemConfig[];
+      if (index >= 0) {
+        updatedList = existingConfigs.map(c => c.id === borderId ? { ...c, price: newPrice } : c);
+      } else {
+        updatedList = [...existingConfigs, { id: borderId, price: newPrice, isAvailable: border.isAvailable !== false }];
+      }
+      onUpdateSettings({ ...settings, styleList: updatedList });
+      alert(`Harga ${border.name} berhasil diubah menjadi ${newPrice.toLocaleString()} Poin / Rp!`);
+    }
+  };
+
+  const handleToggleBorderAvailability = (borderId: string) => {
+    const currentList = getMergedBorders(settings);
+    const border = currentList.find(b => b.id === borderId);
+    if (!border) return;
+
+    const newStatus = !(border.isAvailable !== false);
+    const existingConfigs = settings.styleList || [];
+    const index = existingConfigs.findIndex(c => c.id === borderId);
+
+    let updatedList: StyleItemConfig[];
+    if (index >= 0) {
+      updatedList = existingConfigs.map(c => c.id === borderId ? { ...c, isAvailable: newStatus } : c);
+    } else {
+      updatedList = [...existingConfigs, { id: borderId, price: border.price, isAvailable: newStatus }];
+    }
+    onUpdateSettings({ ...settings, styleList: updatedList });
+    alert(`Status ${border.name} sekarang: ${newStatus ? 'Tersedia di Toko' : 'Ditutup / Habis'}`);
+  };
+
+  const handleAddVoucher = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const code = (fd.get('code') as string || '').toUpperCase().trim();
+    const rewardPoints = parseInt(fd.get('rewardPoints') as string, 10) || 1000;
+    const description = (fd.get('description') as string || '').trim();
+
+    if (!code) {
+      alert('Kode voucher tidak boleh kosong!');
+      return;
+    }
+
+    const currentVouchers = settings.customVouchers || [];
+    if (currentVouchers.some(v => v.code === code)) {
+      alert(`Kode voucher "${code}" sudah ada!`);
+      return;
+    }
+
+    const newVoucher: CustomVoucher = {
+      id: Math.random().toString(36).substr(2, 9),
+      code,
+      rewardPoints,
+      description: description || `Bonus +${rewardPoints.toLocaleString()} Poin`,
+      isActive: true,
+      createdAt: new Date().toISOString()
+    };
+
+    onUpdateSettings({ ...settings, customVouchers: [...currentVouchers, newVoucher] });
+    (e.target as HTMLFormElement).reset();
+    alert(`Kode voucher ${code} (+${rewardPoints.toLocaleString()} Poin) berhasil ditambahkan!`);
+  };
+
+  const handleDeleteVoucher = (voucherId: string) => {
+    if (confirm('Hapus kode voucher ini?')) {
+      const updated = (settings.customVouchers || []).filter(v => v.id !== voucherId);
+      onUpdateSettings({ ...settings, customVouchers: updated });
+    }
+  };
+
+  const handleToggleVoucher = (voucherId: string) => {
+    const updated = (settings.customVouchers || []).map(v => v.id === voucherId ? { ...v, isActive: !v.isActive } : v);
+    onUpdateSettings({ ...settings, customVouchers: updated });
+  };
+
   return (
     <div className="fixed inset-0 w-full h-full bg-black/60 backdrop-blur-xl z-[100] flex flex-col overflow-y-auto">
       {/* Background */}
@@ -3462,6 +3623,163 @@ function AdminDashboard({
                 Simpan Latar
               </button>
             </form>
+          </div>
+
+          {/* PENGATURAN FUTSAR STYLE (TOKO STYLE, BORDERS & VOUCHERS) */}
+          <div className="bg-[#111]/60 backdrop-blur-md border border-[#ffd700]/30 p-6 rounded-2xl shadow-[0_4px_20px_rgba(255,215,0,0.05)]">
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles className="text-[#ffd700]" size={20} />
+              <h3 className="text-[#ffd700] font-black text-xl uppercase tracking-widest">Pengaturan Futsar Style</h3>
+            </div>
+            <p className="text-xs text-[#888] mb-5">Atur katalog efek border, harga, ketersediaan stok, kode voucher promo, dan bonus klaim harian.</p>
+
+            {/* 1. Atur Poin Klaim Harian */}
+            <form onSubmit={handleDailyPointsSubmit} className="mb-6 pb-6 border-b border-[#333]">
+              <label className="block text-[#aaa] text-[11px] font-bold mb-1.5 uppercase">Bonus Poin Klaim Harian Member</label>
+              <div className="flex gap-2">
+                <input 
+                  type="number" 
+                  name="dailyClaimPoints" 
+                  defaultValue={settings.dailyClaimPoints || 1000} 
+                  min="100"
+                  step="100"
+                  className="flex-1 p-3 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#ffd700] transition-colors font-bold" 
+                  required 
+                />
+                <button type="submit" className="px-5 bg-[#ffd700] hover:bg-[#e6c200] text-black font-black rounded-lg text-xs uppercase tracking-wider transition-colors cursor-pointer shrink-0">
+                  Simpan Poin
+                </button>
+              </div>
+            </form>
+
+            {/* 2. Katalog Border Avatar (Harga & Ketersediaan) */}
+            <div className="mb-6 pb-6 border-b border-[#333]">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-xs font-bold text-gray-300 uppercase tracking-wide">Katalog Style Border</span>
+                <span className="text-[10px] text-gray-500">{getMergedBorders(settings).length} Model</span>
+              </div>
+              <div className="flex flex-col gap-2.5 max-h-[260px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-[#ffd700]">
+                {getMergedBorders(settings).map((border) => {
+                  const isAvail = border.isAvailable !== false;
+                  return (
+                    <div key={border.id} className="bg-[#181818] p-3 rounded-xl border border-[#2a2a2a] flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-black/60 border border-[#444] shrink-0 overflow-hidden text-[10px] font-bold text-amber-400">
+                          {border.id.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-black text-white truncate">{border.name}</p>
+                          <p className="text-[10px] text-gray-400 truncate">{border.category} • Rp {border.price.toLocaleString()}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {border.price > 0 && (
+                          <button 
+                            type="button"
+                            onClick={() => handleUpdateBorderPrice(border.id)}
+                            className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer"
+                            title="Ubah harga border"
+                          >
+                            Ubah Harga
+                          </button>
+                        )}
+                        {border.price > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleBorderAvailability(border.id)}
+                            className={`px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer ${
+                              isAvail 
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-black' 
+                                : 'bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white'
+                            }`}
+                          >
+                            {isAvail ? 'Buka' : 'Tutup'}
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-gray-500 px-2">Gratis</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 3. Manajemen Kode Voucher Promo */}
+            <div>
+              <span className="text-xs font-bold text-gray-300 uppercase tracking-wide block mb-3">Buat Kode Voucher Baru</span>
+              <form onSubmit={handleAddVoucher} className="flex flex-col gap-2.5 mb-4">
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    name="code" 
+                    placeholder="Kode (cth: PROMO2026)" 
+                    className="flex-1 p-2.5 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#ffd700] text-xs font-bold uppercase" 
+                    required 
+                  />
+                  <input 
+                    type="number" 
+                    name="rewardPoints" 
+                    placeholder="Poin (cth: 10000)" 
+                    min="100"
+                    step="100"
+                    defaultValue={5000}
+                    className="w-[120px] p-2.5 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#ffd700] text-xs font-bold" 
+                    required 
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    name="description" 
+                    placeholder="Keterangan singkat (cth: Bonus Spesial Lebaran)" 
+                    className="flex-1 p-2.5 rounded-lg bg-[#1a1a1a]/60 backdrop-blur-sm border border-[#333] text-white focus:outline-none focus:border-[#ffd700] text-xs" 
+                  />
+                  <button type="submit" className="px-4 py-2.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-black font-black rounded-lg text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 shrink-0">
+                    <Plus size={14} /> Tambah
+                  </button>
+                </div>
+              </form>
+
+              {/* List Vouchers */}
+              <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-[#ffd700]">
+                {(settings.customVouchers || []).map((v) => (
+                  <div key={v.id} className="bg-[#181818] p-2.5 rounded-xl border border-[#2a2a2a] flex items-center justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-xs text-[#ffd700]">{v.code}</span>
+                        <span className="text-[10px] text-emerald-400 font-bold">+{v.rewardPoints.toLocaleString()} Poin</span>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${v.isActive !== false ? 'bg-emerald-500/20 text-emerald-300' : 'bg-gray-700 text-gray-400'}`}>
+                          {v.isActive !== false ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 line-clamp-1">{v.description}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button 
+                        type="button" 
+                        onClick={() => handleToggleVoucher(v.id)}
+                        className="text-[10px] px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded font-bold cursor-pointer"
+                      >
+                        {v.isActive !== false ? 'Nonaktifkan' : 'Aktifkan'}
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => handleDeleteVoucher(v.id)}
+                        className="text-[#e53e3e] hover:text-white p-1 rounded hover:bg-[#e53e3e]/20 cursor-pointer"
+                        title="Hapus Voucher"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {(!settings.customVouchers || settings.customVouchers.length === 0) && (
+                  <p className="text-[11px] text-gray-500 italic text-center py-2">Belum ada custom voucher tambahan.</p>
+                )}
+              </div>
+            </div>
           </div>
 
 
