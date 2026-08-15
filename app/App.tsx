@@ -1312,35 +1312,13 @@ export default function Page() {
           {/* Header / Nav (Immersive UI Style) */}
           <nav className="z-20 px-4 md:px-8 py-4 flex justify-between items-center bg-black/40 backdrop-blur-md border-b border-[#d4af37]/20 relative">
             <div className="flex items-center gap-3">
-              {/* Message icon with live online indicator replacing the old shirt icon */}
-              <button 
-                onClick={() => setActiveModal('community_chat')}
-                className="relative w-10 h-10 bg-gradient-to-br from-[#ffe89c] via-[#d4af37] to-[#b8911f] rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.35)] hover:scale-105 active:scale-95 transition-all group cursor-pointer border border-[#ffe89c]/40"
-                title="Buka Ruang Chat Komunitas & Status Online"
-              >
-                <MessageSquare size={22} className="text-[#0a0a0a] group-hover:scale-110 transition-transform" />
-                {/* Live Online Pulsing Indicator */}
-                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-black"></span>
-                </span>
-              </button>
-
-              <button 
-                onClick={() => setActiveModal('community_chat')}
-                className="text-left flex flex-col group cursor-pointer"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="font-black tracking-[4px] text-[#d4af37] text-xl md:text-2xl group-hover:brightness-125 transition-all">FUTSAR</span>
-                  <span className="inline-flex items-center gap-1 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    {allUsers.filter(u => u.lastActive && currentTime > 0 && (currentTime - u.lastActive < 90000)).length} Online
-                  </span>
-                </div>
-                <span className="text-[10px] text-[#888] group-hover:text-[#d4af37] transition-colors font-medium -mt-0.5">
-                  Ruang Chat & Anggota
-                </span>
-              </button>
+              {/* Logo Futsar */}
+              <div className="w-10 h-10 bg-gradient-to-br from-[#ffe89c] via-[#d4af37] to-[#b8911f] rounded-xl flex items-center justify-center text-[#0a0a0a] shadow-[0_0_15px_rgba(212,175,55,0.4)] border border-[#ffe89c]/40">
+                <Shirt size={22} className="stroke-[2.5]" />
+              </div>
+              <span className="font-black tracking-[4px] text-[#d4af37] text-xl md:text-2xl drop-shadow-[0_2px_10px_rgba(212,175,55,0.3)]">
+                FUTSAR
+              </span>
             </div>
             
             <div className="hidden md:flex gap-8 text-xs font-bold uppercase tracking-widest text-[#aaa]">
