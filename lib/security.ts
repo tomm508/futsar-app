@@ -3,7 +3,7 @@
  * Menggunakan Web Crypto API bawaan browser (SHA-256)
  */
 export async function hashPassword(plainText: string): Promise<string> {
-  if (!plainText) return '';
+  if (!plainText || !plainText.trim()) return '';
   try {
     const encoder = new TextEncoder();
     const data = encoder.encode(plainText.trim() + "_FUTSAR_SALT_2026_V1");
@@ -29,7 +29,9 @@ export async function hashPassword(plainText: string): Promise<string> {
  * Mendukung migrasi mundur (backward compatibility) jika akun lama masih plain-text
  */
 export async function verifyPassword(inputPassword: string, storedHashOrPassword?: string, storedHash?: string): Promise<boolean> {
+  if (!inputPassword || !inputPassword.trim()) return false;
   if (!storedHashOrPassword && !storedHash) return false;
+
   const inputHash = await hashPassword(inputPassword);
   
   // Cek hash baru
@@ -37,7 +39,7 @@ export async function verifyPassword(inputPassword: string, storedHashOrPassword
   if (storedHashOrPassword && storedHashOrPassword === inputHash) return true;
   
   // Backward compatibility untuk akun yang belum ter-hash (teks biasa)
-  if (storedHashOrPassword && storedHashOrPassword === inputPassword.trim()) {
+  if (storedHashOrPassword && storedHashOrPassword.trim() === inputPassword.trim()) {
     return true;
   }
   
