@@ -1790,9 +1790,9 @@ export default function Page() {
       {activeModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[500] flex justify-center items-center p-3 sm:p-4 animate-in fade-in duration-200">
           <div className="relative w-full flex justify-center items-center max-w-[500px]">
-            {/* Gemini Neon Edge Aurora for Login, Register & Chat Modals */}
-            {(activeModal === 'masuk' || activeModal === 'daftar' || activeModal === 'community_chat') && (
-              <GeminiEdgeAurora intensity={activeModal === 'community_chat' ? 'subtle' : 'normal'} />
+            {/* Gemini Neon Edge Aurora for Chat Modals only */}
+            {activeModal === 'community_chat' && (
+              <GeminiEdgeAurora intensity="subtle" />
             )}
 
             <div className={`bg-[#111] w-full ${
