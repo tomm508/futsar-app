@@ -54,49 +54,49 @@ export const DEFAULT_PROFILE_COVERS: CoverItemConfig[] = [
     name: 'Dewa Kuno Surgawi', 
     price: 30000, 
     category: 'Renegade Series', 
-    url: '/cover-ancient-god.jpg', 
+    url: 'css:dewa_kuno', 
     fallbackUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1000&q=80',
     desc: 'Aura dewa kuno emas berawan mistis & cahaya kosmik abadi',
     isAvailable: true
   },
   { 
-    id: 'dragon', 
-    name: 'Naga Kosmik Emas', 
+    id: 'wanglin', 
+    name: 'Wang Lin Slaughter Flame', 
     price: 15000, 
-    category: 'Dragon Series', 
-    url: '/cover-dragon.jpg', 
+    category: 'Renegade Series', 
+    url: 'css:wanglin', 
     fallbackUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1000&q=80',
-    desc: 'Naga emas legendaris meluncur di kabut nebula kosmik',
+    desc: 'Api kosmik pembantaian merah menyala dengan aura absolut',
     isAvailable: true
   },
   { 
-    id: 'cyber', 
-    name: 'Cyber Stadium Night', 
-    price: 10000, 
-    category: 'Cyber Series', 
-    url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=80', 
+    id: 'dragon', 
+    name: 'White Imperial Dragon', 
+    price: 20000, 
+    category: 'Dragon Series', 
+    url: 'css:dragon', 
     fallbackUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=80',
-    desc: 'Stadion megah berlatar lampu neon modern',
+    desc: 'Cahaya naga putih emas suci yang terus mengalir',
     isAvailable: true
   },
   { 
-    id: 'aurora', 
-    name: 'Golden Sunset Aurora', 
-    price: 10000, 
-    category: 'Golden Series', 
-    url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1000&q=80', 
+    id: 'nika', 
+    name: 'Sun God Nika', 
+    price: 25000, 
+    category: 'One Piece Series', 
+    url: 'css:nika', 
     fallbackUrl: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1000&q=80',
-    desc: 'Cahaya emas senja hangat berkilau',
+    desc: 'Getaran dewa matahari Nika yang memancarkan aura kebebasan',
     isAvailable: true
   },
   { 
-    id: 'abyss', 
-    name: 'Cosmic Violet Realm', 
+    id: 'sasuke', 
+    name: 'Sasuke Susanoo', 
     price: 15000, 
-    category: 'Abyss Series', 
-    url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1000&q=80', 
+    category: 'Naruto Series', 
+    url: 'css:sasuke', 
     fallbackUrl: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1000&q=80',
-    desc: 'Galaksi ungu mistis dan gugusan bintang bersinar',
+    desc: 'Kilatan petir ungu kegelapan dan cakra absolut Susanoo',
     isAvailable: true
   },
 ];
@@ -108,6 +108,54 @@ export const getCoverUrl = (url?: string): string => {
   return url;
 };
 
+
+export const AnimatedCssCover = ({ url, className = "" }: { url: string, className?: string }) => {
+  const type = url.replace('css:', '');
+  switch (type) {
+    case 'dewa_kuno':
+      return (
+        <div className={`absolute inset-0 overflow-hidden bg-[#1a1200] ${className}`}>
+           <div className="absolute inset-0 bg-gradient-to-br from-[#d4af37]/20 via-[#1a1200] to-black" />
+           <div className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] bg-[conic-gradient(from_0deg,transparent_0%,rgba(253,224,71,0.15)_30%,transparent_50%)] animate-cosmic-spin" />
+           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,rgba(250,204,21,0.2),transparent_50%)] animate-pulse" />
+        </div>
+      );
+    case 'wanglin':
+      return (
+        <div className={`absolute inset-0 overflow-hidden bg-[#1a0505] ${className}`}>
+           <div className="absolute -bottom-1/2 -left-1/2 w-[200%] h-[200%] bg-[conic-gradient(from_90deg,transparent_0%,rgba(220,38,38,0.2)_40%,transparent_80%)] animate-flame-flow" />
+           <div className="absolute inset-0 bg-gradient-to-t from-black via-[#8b0000]/40 to-[#ff0000]/20" />
+           <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-red-600 rounded-full mix-blend-screen blur-[60px] animate-pulse" />
+           <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-orange-700 rounded-full mix-blend-screen blur-[80px] animate-cloud-float" />
+        </div>
+      );
+    case 'dragon':
+      return (
+        <div className={`absolute inset-0 overflow-hidden bg-slate-950 ${className}`}>
+           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.15),transparent_60%)] animate-pulse" />
+           <div className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] animate-dragon-orbit opacity-30" style={{ background: 'conic-gradient(from 180deg, transparent 0%, #fefce8 10%, #fef08a 20%, transparent 40%)' }} />
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-white rounded-full mix-blend-overlay blur-[40px] animate-celestial-pulse" />
+        </div>
+      );
+    case 'nika':
+      return (
+        <div className={`absolute inset-0 overflow-hidden bg-orange-950 ${className}`}>
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] animate-nika-spin opacity-40" style={{ background: 'conic-gradient(from 0deg, #fef08a 0%, #f97316 25%, #fef08a 50%, #f97316 75%, #fef08a 100%)', filter: 'blur(30px)' }} />
+           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-yellow-400 rounded-full mix-blend-screen blur-[50px] animate-pulse" />
+        </div>
+      );
+    case 'sasuke':
+      return (
+        <div className={`absolute inset-0 overflow-hidden bg-[#1a052b] ${className}`}>
+           <div className="absolute -bottom-1/2 -left-1/2 w-[200%] h-[200%] animate-susanoo-pulse opacity-50" style={{ background: 'conic-gradient(from 45deg, transparent 0%, #9333ea 30%, transparent 60%)' }} />
+           <div className="absolute top-0 right-0 w-48 h-48 bg-purple-600 rounded-full mix-blend-screen blur-[60px] animate-lightning-flash" />
+        </div>
+      );
+    default:
+      return null;
+  }
+};
 export const getMergedCovers = (settings?: AppSettings): CoverItemConfig[] => {
   if (!settings?.coverList || settings.coverList.length === 0) {
     return DEFAULT_PROFILE_COVERS;
@@ -1982,9 +2030,12 @@ export default function Page() {
                     <div 
                       className="h-28 w-full relative bg-cover bg-center flex items-end justify-center p-2 bg-[#1c1c1c]"
                       style={{
-                        backgroundImage: (editingCoverUrl || user.coverUrl) ? `url(${editingCoverUrl || user.coverUrl})` : 'none'
+                        backgroundImage: ((editingCoverUrl || user.coverUrl) && !(editingCoverUrl || user.coverUrl)?.startsWith('css:')) ? `url(${editingCoverUrl || user.coverUrl})` : 'none'
                       }}
                     >
+                      {((editingCoverUrl || user.coverUrl)?.startsWith('css:')) && (
+                        <AnimatedCssCover url={editingCoverUrl || user.coverUrl || ''} />
+                      )}
                       {/* Gradient overlay or subtle pattern when polos */}
                       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/90 pointer-events-none" />
                       {!(editingCoverUrl || user.coverUrl) && (
@@ -2063,7 +2114,9 @@ export default function Page() {
                                 : 'border-white/10 opacity-50 hover:opacity-80'
                             }`}
                           >
-                            {cover.url ? (
+                            {cover.url?.startsWith('css:') ? (
+                              <AnimatedCssCover url={cover.url} className="opacity-80" />
+                            ) : cover.url ? (
                               <img 
                                 src={cover.url} 
                                 alt={cover.name} 
@@ -2875,7 +2928,9 @@ export default function Page() {
                         return (
                           <div key={cover.id} className={`bg-[#181818] rounded-2xl overflow-hidden border-2 flex flex-col transition-all ${isActive ? 'border-[#ffd700] shadow-[0_0_20px_rgba(255,215,0,0.2)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
                             <div className="h-28 w-full relative bg-[#151515]">
-                              {cover.url ? (
+                              {cover.url?.startsWith('css:') ? (
+                              <AnimatedCssCover url={cover.url} className="opacity-80" />
+                            ) : cover.url ? (
                                 <img 
                                   src={cover.url} 
                                   alt={cover.name} 
@@ -3105,6 +3160,9 @@ export default function Page() {
                           return (
                             <div key={c.id} className="bg-[#121212] rounded-xl overflow-hidden border border-[#2a2a2a] flex flex-col">
                               <div className="h-16 w-full relative bg-[#151515]">
+                                {c.url?.startsWith('css:') ? (
+                                  <AnimatedCssCover url={c.url} className="opacity-80" />
+                                ) : (
                                 <img 
                                   src={c.url} 
                                   alt={c.name} 
@@ -3115,6 +3173,8 @@ export default function Page() {
                                   }}
                                   className="w-full h-full object-cover" 
                                 />
+                                )}
+    
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                                 <span className="absolute bottom-1.5 left-2 text-white font-bold text-xs">{c.name}</span>
                               </div>
@@ -3680,9 +3740,12 @@ export default function Page() {
               <div 
                 className="h-36 w-full relative bg-cover bg-center flex items-start justify-between p-3.5 bg-[#1a1a1a]"
                 style={{
-                  backgroundImage: selectedMember.coverUrl ? `url(${selectedMember.coverUrl})` : 'none'
+                  backgroundImage: (selectedMember.coverUrl && !selectedMember.coverUrl.startsWith('css:')) ? `url(${selectedMember.coverUrl})` : 'none'
                 }}
               >
+                {selectedMember.coverUrl?.startsWith('css:') && (
+                  <AnimatedCssCover url={selectedMember.coverUrl} />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-[#111111] pointer-events-none" />
                 {!selectedMember.coverUrl && (
                   <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
@@ -4350,7 +4413,7 @@ function AdminDashboard({
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-10 h-6 rounded flex items-center justify-center bg-black/60 border border-[#444] shrink-0 overflow-hidden relative">
                           {cover.url ? (
-                            <img src={cover.url} alt={cover.name} className="w-full h-full object-cover" />
+                            cover.url.startsWith('css:') ? <AnimatedCssCover url={cover.url} className="opacity-80" /> : <img src={cover.url} alt={cover.name} className="w-full h-full object-cover" />
                           ) : (
                             <span className="text-[8px] font-bold text-gray-500">KOSONG</span>
                           )}
