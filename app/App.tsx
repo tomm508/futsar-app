@@ -28,12 +28,57 @@ const PROFILE_THEMES = [
 ];
 
 export const PROFILE_COVERS = [
-  { id: 'ancient_god', name: 'Dewa Kuno Surgawi', price: 0, category: 'Renegade Series', url: '/cover-ancient-god.jpg', desc: 'Aura dewa kuno emas berawan mistis & cahaya kosmik abadi' },
-  { id: 'dragon', name: 'Naga Kosmik Emas', price: 15000, category: 'Dragon Series', url: '/cover-dragon.jpg', desc: 'Naga emas legendaris meluncur di kabut nebula kosmik' },
-  { id: 'cyber', name: 'Cyber Stadium Night', price: 10000, category: 'Cyber Series', url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=80', desc: 'Stadion megah berlatar lampu neon modern' },
-  { id: 'aurora', name: 'Golden Sunset Aurora', price: 10000, category: 'Golden Series', url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1000&q=80', desc: 'Cahaya emas senja hangat berkilau' },
-  { id: 'abyss', name: 'Cosmic Violet Realm', price: 15000, category: 'Abyss Series', url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1000&q=80', desc: 'Galaksi ungu mistis dan gugusan bintang bersinar' },
+  { 
+    id: 'ancient_god', 
+    name: 'Dewa Kuno Surgawi', 
+    price: 0, 
+    category: 'Renegade Series', 
+    url: '/cover-ancient-god.jpg', 
+    fallbackUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1000&q=80',
+    desc: 'Aura dewa kuno emas berawan mistis & cahaya kosmik abadi' 
+  },
+  { 
+    id: 'dragon', 
+    name: 'Naga Kosmik Emas', 
+    price: 15000, 
+    category: 'Dragon Series', 
+    url: '/cover-dragon.jpg', 
+    fallbackUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1000&q=80',
+    desc: 'Naga emas legendaris meluncur di kabut nebula kosmik' 
+  },
+  { 
+    id: 'cyber', 
+    name: 'Cyber Stadium Night', 
+    price: 10000, 
+    category: 'Cyber Series', 
+    url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=80', 
+    fallbackUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=80',
+    desc: 'Stadion megah berlatar lampu neon modern' 
+  },
+  { 
+    id: 'aurora', 
+    name: 'Golden Sunset Aurora', 
+    price: 10000, 
+    category: 'Golden Series', 
+    url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1000&q=80', 
+    fallbackUrl: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1000&q=80',
+    desc: 'Cahaya emas senja hangat berkilau' 
+  },
+  { 
+    id: 'abyss', 
+    name: 'Cosmic Violet Realm', 
+    price: 15000, 
+    category: 'Abyss Series', 
+    url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1000&q=80', 
+    fallbackUrl: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1000&q=80',
+    desc: 'Galaksi ungu mistis dan gugusan bintang bersinar' 
+  },
 ];
+
+export const getCoverUrl = (url?: string): string => {
+  if (!url || url === '/cover-ancient-god.jpg') return '/cover-ancient-god.jpg';
+  return url;
+};
 
 export type StyleItemConfig = {
   id: string;
@@ -578,27 +623,50 @@ export default function Page() {
   const [selectedGalleryPhoto, setSelectedGalleryPhoto] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
 
-  const exportDataToCSV = (usersToExport: User[]) => {
-    const headers = ['Nama', 'ID Member', 'Posisi', 'No Punggung', 'WhatsApp', 'Status Akun', 'Status Kas', 'Bio / Motto'];
-    const rows = usersToExport.map(u => [
-      `"${(u.nama || '').replace(/"/g, '""')}"`,
-      `"${(u.id || '').replace(/"/g, '""')}"`,
-      `"${(u.posisi || '').replace(/"/g, '""')}"`,
-      `"${(u.jerseyNumber ? '#' + u.jerseyNumber : '-').replace(/"/g, '""')}"`,
-      `"${(u.wa || '').replace(/"/g, '""')}"`,
-      `"${(u.status === 'active' ? 'Aktif' : u.status === 'pending' ? 'Menunggu' : 'Ditolak')}"`,
-      `"${(u.isPaid ? 'Lunas' : 'Belum Lunas')}"`,
-      `"${(u.bio || '-').replace(/"/g, '""')}"`
-    ]);
+  const exportDataToCSV = async (usersToExport: User[]) => {
+    try {
+      const headers = ['Nama', 'ID Member', 'Posisi', 'No Punggung', 'WhatsApp', 'Status Akun', 'Status Kas', 'Poin', 'Bio / Motto'];
+      const rows = usersToExport.map(u => [
+        `"${(u.nama || '').replace(/"/g, '""')}"`,
+        `"${(u.id || '').replace(/"/g, '""')}"`,
+        `"${(u.posisi || '').replace(/"/g, '""')}"`,
+        `"${(u.jerseyNumber ? '#' + u.jerseyNumber : '-').replace(/"/g, '""')}"`,
+        `"${(u.wa || '').replace(/"/g, '""')}"`,
+        `"${(u.status === 'active' ? 'Aktif' : u.status === 'pending' ? 'Menunggu' : 'Ditolak')}"`,
+        `"${(u.isPaid ? 'Lunas' : 'Belum Lunas')}"`,
+        `"${(u.points || 0)}"`,
+        `"${(u.bio || '-').replace(/"/g, '""')}"`
+      ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+      const csvString = '\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\r\n');
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `rekap_futsar_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 200);
+    } catch (err) {
+      console.error('Failed to export CSV client-side, falling back to server route:', err);
+      // Fallback via API route
+      window.open('/api/export-csv', '_blank');
+    }
+  };
+
+  const handleDownloadAppSource = () => {
+    // Create dedicated link element with blob trigger
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `rekap_futsar_${new Date().toISOString().slice(0,10)}.csv`);
+    link.href = '/api/download';
+    link.setAttribute('download', 'futsar-app-source.zip');
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    setTimeout(() => {
+      document.body.removeChild(link);
+    }, 200);
   };
 
   useEffect(() => {
@@ -647,8 +715,9 @@ export default function Page() {
 
   const handleBuyBorder = async (borderId: string, price: number) => {
     if (!user) return;
+    const currentOwned = user.ownedBorders || ['classic'];
+
     if (user.role === 'admin') {
-      const currentOwned = user.ownedBorders || ['classic'];
       const newOwned = currentOwned.includes(borderId) ? currentOwned : [...currentOwned, borderId];
       setUser({ ...user, avatarBorder: borderId, ownedBorders: newOwned });
       alert('Border berhasil diaktifkan untuk Admin!');
@@ -659,16 +728,20 @@ export default function Page() {
       alert('Poin kamu tidak cukup untuk membeli border ini! Dapatkan poin lewat klaim harian, voucher, atau minta admin.');
       return;
     }
-    const currentOwned = user.ownedBorders || ['classic'];
     if (currentOwned.includes(borderId)) {
       alert('Border ini sudah kamu miliki! Klik Pakai untuk menggunakannya.');
       return;
     }
     
+    // Instant optimistic update
+    const newPoints = (user.points || 0) - price;
+    const newOwned = [...currentOwned, borderId];
+    setUser({ ...user, points: newPoints, ownedBorders: newOwned, avatarBorder: borderId });
+
     try {
       await updateDoc(doc(db, "users", user.wa), {
-        points: (user.points || 0) - price,
-        ownedBorders: [...currentOwned, borderId],
+        points: newPoints,
+        ownedBorders: newOwned,
         avatarBorder: borderId
       });
       alert('Selamat! Border berhasil dibeli dan langsung dipakai.');
@@ -680,8 +753,10 @@ export default function Page() {
 
   const handleEquipBorder = async (borderId: string) => {
     if (!user) return;
+    // Instant optimistic update
+    setUser({ ...user, avatarBorder: borderId });
+
     if (user.role === 'admin') {
-      setUser({ ...user, avatarBorder: borderId });
       alert('Border berhasil dipakai!');
       return;
     }
@@ -696,8 +771,9 @@ export default function Page() {
 
   const handleBuyCover = async (coverUrl: string, price: number) => {
     if (!user) return;
+    const currentOwned = user.ownedCovers || ['/cover-ancient-god.jpg'];
+
     if (user.role === 'admin') {
-      const currentOwned = user.ownedCovers || ['/cover-ancient-god.jpg'];
       const newOwned = currentOwned.includes(coverUrl) ? currentOwned : [...currentOwned, coverUrl];
       setUser({ ...user, coverUrl, ownedCovers: newOwned });
       alert('Sampul profil berhasil diaktifkan untuk Admin!');
@@ -708,16 +784,20 @@ export default function Page() {
       alert('Poin kamu tidak cukup untuk membeli sampul ini!');
       return;
     }
-    const currentOwned = user.ownedCovers || ['/cover-ancient-god.jpg'];
     if (currentOwned.includes(coverUrl)) {
       alert('Sampul ini sudah kamu miliki!');
       return;
     }
     
+    // Instant optimistic update
+    const newPoints = (user.points || 0) - price;
+    const newOwned = [...currentOwned, coverUrl];
+    setUser({ ...user, points: newPoints, ownedCovers: newOwned, coverUrl });
+
     try {
       await updateDoc(doc(db, "users", user.wa), {
-        points: (user.points || 0) - price,
-        ownedCovers: [...currentOwned, coverUrl],
+        points: newPoints,
+        ownedCovers: newOwned,
         coverUrl
       });
       alert('Selamat! Sampul profil berhasil dibeli dan langsung dipakai.');
@@ -729,8 +809,10 @@ export default function Page() {
 
   const handleEquipCover = async (coverUrl: string) => {
     if (!user) return;
+    // Instant optimistic update
+    setUser({ ...user, coverUrl });
+
     if (user.role === 'admin') {
-      setUser({ ...user, coverUrl });
       alert('Sampul profil berhasil dipakai!');
       return;
     }
@@ -760,6 +842,7 @@ export default function Page() {
 
     try {
       const newPoints = (user.points || 0) + claimAmount;
+      setUser({ ...user, points: newPoints });
       await updateDoc(doc(db, "users", user.wa), { points: newPoints });
       localStorage.setItem(`daily_claim_${user.wa}`, todayStr);
       alert(`🎉 Hore! Berhasil klaim +${claimAmount.toLocaleString()} Poin Harian Futsar Style!`);
@@ -815,6 +898,7 @@ export default function Page() {
     try {
       if (user.role !== 'admin') {
         const newPoints = (user.points || 0) + reward;
+        setUser({ ...user, points: newPoints });
         await updateDoc(doc(db, "users", user.wa), { points: newPoints });
       }
       localStorage.setItem(redeemedKey, 'true');
@@ -851,7 +935,9 @@ export default function Page() {
 
     try {
       if (user.role !== 'admin') {
-        await updateDoc(doc(db, "users", user.wa), { points: (user.points || 0) - amount });
+        const newPoints = (user.points || 0) - amount;
+        setUser({ ...user, points: newPoints });
+        await updateDoc(doc(db, "users", user.wa), { points: newPoints });
       }
       await updateDoc(doc(db, "users", recipient.wa), { points: (recipient.points || 0) + amount });
       alert(`Berhasil mengirimkan ${amount.toLocaleString()} Poin ke ${recipient.nama}!`);
@@ -890,7 +976,9 @@ export default function Page() {
 
     try {
       if (user.role !== 'admin') {
-        await updateDoc(doc(db, "users", user.wa), { points: (user.points || 0) - border.price });
+        const newPoints = (user.points || 0) - border.price;
+        setUser({ ...user, points: newPoints });
+        await updateDoc(doc(db, "users", user.wa), { points: newPoints });
       }
       await updateDoc(doc(db, "users", recipient.wa), {
         ownedBorders: [...recipientOwned, border.id]
@@ -1042,6 +1130,33 @@ export default function Page() {
     return () => unsubChat();
   }, []);
 
+  // Real-time listener for current user state sync
+  useEffect(() => {
+    if (!user?.wa || user.wa === 'ADMIN' || user.role === 'admin') {
+      return;
+    }
+    const unsub = onSnapshot(doc(db, "users", user.wa), (docSnap) => {
+      if (docSnap.exists()) {
+        const remoteData = docSnap.data() as User;
+        setUser((prev) => {
+          if (!prev || prev.wa !== remoteData.wa) return remoteData;
+          return { ...prev, ...remoteData };
+        });
+      }
+    });
+    return () => unsub();
+  }, [user?.wa]);
+
+  // Keep edit profile form in sync with user state
+  useEffect(() => {
+    if (activeModal === 'profile' && user) {
+      setEditingThemeColor(user.themeColor || '#d4af37');
+      setEditingAvatarBorder(user.avatarBorder || 'classic');
+      setEditingCoverUrl(user.coverUrl || PROFILE_COVERS[0].url);
+      setEditingNickStyle(user.nickStyle || 'dewa');
+    }
+  }, [activeModal, user]);
+
   useEffect(() => {
     const unsubSettings = onSnapshot(doc(db, "settings", "global"), (docSnap) => {
       if (docSnap.exists()) {
@@ -1058,7 +1173,6 @@ export default function Page() {
       }
       setIsSettingsLoaded(true);
     });
-    
 
     const savedWa = localStorage.getItem('futsar_user_wa');
     let unsubUser: () => void;
@@ -1780,7 +1894,7 @@ export default function Page() {
         <p className="text-[14px] leading-[1.6] text-[#aaa]">
           Website mini ini dibuat {'{ Sel, 11 Aug 2026 }'} sebagai platform resmi untuk Member Futsar Club. Harapannya agar semua member Futsar ini bisa lebih produktif.<br/><br/>Terima Kasih!
         </p>
-        <div className="mt-10 border-t border-[#333] pt-5 space-y-3">
+        <div className="mt-8 border-t border-[#333] pt-5 space-y-3">
           <p className="text-[12px] text-[#d4af37] flex items-center gap-2"><MapPin size={14}/> Basecamp: Rumah Saep</p>
           <p className="text-[12px] text-[#d4af37] flex items-center gap-2"><Instagram size={14}/> @futsar_teuing</p>
         </div>
@@ -1872,29 +1986,52 @@ export default function Page() {
                         <ImageIcon size={13} className="text-[#ffd700]" /> Sampul Profil (Cover)
                       </span>
                       <span className="text-[10px] text-[#ffd700] font-semibold">
-                        {PROFILE_COVERS.find(c => c.url === editingCoverUrl)?.name || 'Kustom'}
+                        {PROFILE_COVERS.find(c => c.url === (editingCoverUrl || user.coverUrl))?.name || 'Kustom'}
                       </span>
                     </label>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {PROFILE_COVERS.map((cover) => {
-                        const isSelected = (editingCoverUrl || user.coverUrl || '/cover-ancient-god.jpg') === cover.url;
+                        const isOwned = (user?.ownedCovers || ['/cover-ancient-god.jpg']).includes(cover.url) || cover.price === 0 || user?.role === 'admin';
+                        const currentActiveUrl = editingCoverUrl || user.coverUrl || '/cover-ancient-god.jpg';
+                        const isSelected = currentActiveUrl === cover.url;
                         return (
                           <button
                             key={cover.id}
                             type="button"
-                            onClick={() => setEditingCoverUrl(cover.url)}
-                            className={`group h-16 rounded-xl relative overflow-hidden border text-left transition-all cursor-pointer ${
+                            onClick={() => {
+                              if (!isOwned) {
+                                setActiveModal('deco');
+                                setDecoTab('covers');
+                                return;
+                              }
+                              setEditingCoverUrl(cover.url);
+                            }}
+                            className={`group h-16 rounded-xl relative overflow-hidden border text-left transition-all cursor-pointer bg-[#151515] ${
                               isSelected 
                                 ? 'border-[#ffd700] ring-2 ring-[#ffd700] shadow-[0_0_12px_rgba(255,215,0,0.3)] scale-[1.02]' 
-                                : 'border-white/10 opacity-70 hover:opacity-100 hover:border-white/30'
+                                : isOwned
+                                ? 'border-white/10 opacity-70 hover:opacity-100 hover:border-white/30'
+                                : 'border-white/10 opacity-50 hover:opacity-80'
                             }`}
                           >
-                            <img src={cover.url} alt={cover.name} className="w-full h-full object-cover" />
+                            <img 
+                              src={cover.url} 
+                              alt={cover.name} 
+                              onError={(e) => {
+                                if (cover.fallbackUrl && e.currentTarget.src !== cover.fallbackUrl) {
+                                  e.currentTarget.src = cover.fallbackUrl;
+                                }
+                              }}
+                              className="w-full h-full object-cover" 
+                            />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-1.5 flex flex-col justify-end">
                               <span className="text-[10px] font-black text-white leading-tight truncate drop-shadow-md">
                                 {cover.name}
                               </span>
+                              {!isOwned && (
+                                <span className="text-[8px] text-[#ffd700] font-bold">Terkunci (Beli di Toko)</span>
+                              )}
                             </div>
                             {isSelected && (
                               <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#ffd700] text-black flex items-center justify-center font-black text-[9px] shadow-sm">
@@ -2677,8 +2814,17 @@ export default function Page() {
                         const isActive = (user?.coverUrl || '/cover-ancient-god.jpg') === cover.url;
                         return (
                           <div key={cover.id} className={`bg-[#181818] rounded-2xl overflow-hidden border-2 flex flex-col transition-all ${isActive ? 'border-[#ffd700] shadow-[0_0_20px_rgba(255,215,0,0.2)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
-                            <div className="h-28 w-full relative">
-                              <img src={cover.url} alt={cover.name} className="w-full h-full object-cover" />
+                            <div className="h-28 w-full relative bg-[#151515]">
+                              <img 
+                                src={cover.url} 
+                                alt={cover.name} 
+                                onError={(e) => {
+                                  if (cover.fallbackUrl && e.currentTarget.src !== cover.fallbackUrl) {
+                                    e.currentTarget.src = cover.fallbackUrl;
+                                  }
+                                }}
+                                className="w-full h-full object-cover" 
+                              />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
                               <span className="absolute top-2 right-2 bg-black/70 text-[#ffd700] font-black text-[10px] px-2 py-0.5 rounded-full border border-[#ffd700]/30 uppercase">
                                 {cover.category}
@@ -2889,8 +3035,17 @@ export default function Page() {
                           const isActive = (user?.coverUrl || '/cover-ancient-god.jpg') === c.url;
                           return (
                             <div key={c.id} className="bg-[#121212] rounded-xl overflow-hidden border border-[#2a2a2a] flex flex-col">
-                              <div className="h-16 w-full relative">
-                                <img src={c.url} alt={c.name} className="w-full h-full object-cover" />
+                              <div className="h-16 w-full relative bg-[#151515]">
+                                <img 
+                                  src={c.url} 
+                                  alt={c.name} 
+                                  onError={(e) => {
+                                    if (c.fallbackUrl && e.currentTarget.src !== c.fallbackUrl) {
+                                      e.currentTarget.src = c.fallbackUrl;
+                                    }
+                                  }}
+                                  className="w-full h-full object-cover" 
+                                />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                                 <span className="absolute bottom-1.5 left-2 text-white font-bold text-xs">{c.name}</span>
                               </div>
@@ -3608,6 +3763,7 @@ export default function Page() {
           onOpenChat={() => setActiveModal('community_chat')}
           onSelectMember={(m) => setSelectedMember(m)}
           onExportCSV={exportDataToCSV}
+          onDownloadSource={handleDownloadAppSource}
         />
       )}
 
@@ -3640,14 +3796,16 @@ function AdminDashboard({
   onLogout, 
   onOpenChat,
   onSelectMember,
-  onExportCSV
+  onExportCSV,
+  onDownloadSource
 }: { 
   settings: AppSettings, 
   onUpdateSettings: (s: AppSettings) => void, 
   onLogout: () => void, 
   onOpenChat?: () => void,
   onSelectMember?: (m: User) => void,
-  onExportCSV?: (users: User[]) => void
+  onExportCSV?: (users: User[]) => void,
+  onDownloadSource?: () => void
 }) {
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
