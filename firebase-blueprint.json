@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "users": {
+      "title": "User",
+      "description": "User profiles, credentials hash, points, borders, covers, and membership status",
+      "type": "object",
+      "properties": {
+        "nama": { "type": "string" },
+        "posisi": { "type": "string" },
+        "wa": { "type": "string" },
+        "id": { "type": "string" },
+        "passwordHash": { "type": "string" },
+        "password": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "pending", "rejected"] },
+        "role": { "type": "string", "enum": ["admin", "member"] },
+        "points": { "type": "number" },
+        "isPaid": { "type": "boolean" },
+        "avatarBorder": { "type": "string" },
+        "ownedBorders": { "type": "array", "items": { "type": "string" } },
+        "coverUrl": { "type": "string" },
+        "ownedCovers": { "type": "array", "items": { "type": "string" } },
+        "bio": { "type": "string" },
+        "jerseyNumber": { "type": "string" },
+        "lastActive": { "type": "number" }
+      },
+      "required": ["nama", "wa", "id"]
+    },
+    "settings": {
+      "title": "AppSettings",
+      "description": "Global club configurations, payment cycles, announcements, and vouchers",
+      "type": "object"
+    },
+    "community_messages": {
+      "title": "ChatMessage",
+      "description": "Real-time club room messages and media",
+      "type": "object"
+    },
+    "kado_transactions": {
+      "title": "GiftTransaction",
+      "description": "Transfer history of points and borders between members",
+      "type": "object"
+    }
+  },
+  "firestore": {
+    "users": {
+      "path": "users/{userId}",
+      "entity": "users"
+    },
+    "settings": {
+      "path": "settings/{settingId}",
+      "entity": "settings"
+    },
+    "community_messages": {
+      "path": "community_messages/{messageId}",
+      "entity": "community_messages"
+    },
+    "kado_transactions": {
+      "path": "kado_transactions/{transactionId}",
+      "entity": "kado_transactions"
+    }
+  }
+}

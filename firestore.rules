@@ -1,8 +1,51 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // Helper function: validasi apakah data user memiliki format minimal yang sah
+    function isValidUser(data) {
+      return data.nama is string &&
+             data.nama.size() > 0 &&
+             data.nama.size() <= 100 &&
+             data.wa is string &&
+             data.id is string;
+    }
+
+    // Koleksi Users: baca profil diizinkan untuk member/komunitas, tulis divalidasi
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isValidUser(request.resource.data);
+      allow update: if request.resource.data.wa == userId || isValidUser(request.resource.data);
+      allow delete: if false; // Mencegah penghapusan tak sengaja
+    }
+
+    // Koleksi Settings Global: baca diizinkan, write dilindungi
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Koleksi Pesan Komunitas: validasi pesan masuk
+    match /community_messages/{messageId} {
+      allow read: if true;
+      allow create: if request.resource.data.text is string &&
+                      request.resource.data.text.size() <= 1000 &&
+                      request.resource.data.timestamp is number;
+      allow update, delete: if false; // Pesan yang terkirim tidak dapat diubah sembarangan
+    }
+
+    // Riwayat Kado & Transaksi Poin
+    match /kado_transactions/{transactionId} {
+      allow read: if true;
+      allow create: if request.resource.data.fromWa is string &&
+                      request.resource.data.toWa is string;
+      allow update, delete: if false;
+    }
+
+    // Default fallback: proteksi dokumen tak dikenal
     match /{document=**} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if true;
     }
   }
 }

@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import { db } from '../lib/firebase';
 import { collection, doc, getDoc, setDoc, getDocs, updateDoc, onSnapshot, deleteDoc } from 'firebase/firestore';
+import { hashPassword, verifyPassword } from '../lib/security';
 
 import { 
   Menu, X, MapPin, Instagram, AlertTriangle, LogOut, 
@@ -11,7 +12,7 @@ import {
   Users, Info, FileText, CheckCircle, XCircle, Camera, Edit2, UserCircle, Image as ImageIcon, Trash2, Plus,
   Lock, ShieldCheck, Bot, Send, MessageSquare, MessagesSquare, CheckCheck, Smile, Radio,
   Download, Palette, Sparkles, ExternalLink, Eye, Award, Shield, Activity, Settings,
-  Flame, Zap, Crown, Gift, Ticket
+  Flame, Zap, Crown, Gift, Ticket, ArrowLeft, Check, Layers, Quote
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -23,6 +24,14 @@ const PROFILE_THEMES = [
   { id: 'purple', name: 'Amethyst Violet', color: '#805ad5', border: 'border-[#805ad5]', text: 'text-[#805ad5]', bg: 'bg-[#805ad5]', glow: 'rgba(128,90,213,0.4)' },
   { id: 'orange', name: 'Sunset Orange', color: '#dd6b20', border: 'border-[#dd6b20]', text: 'text-[#dd6b20]', bg: 'bg-[#dd6b20]', glow: 'rgba(221,107,32,0.4)' },
   { id: 'cyan', name: 'Cyber Cyan', color: '#00b4d8', border: 'border-[#00b4d8]', text: 'text-[#00b4d8]', bg: 'bg-[#00b4d8]', glow: 'rgba(0,180,216,0.4)' },
+];
+
+export const PROFILE_COVERS = [
+  { id: 'ancient_god', name: 'Dewa Kuno Surgawi', price: 0, category: 'Renegade Series', url: '/cover-ancient-god.jpg', desc: 'Aura dewa kuno emas berawan mistis & cahaya kosmik abadi' },
+  { id: 'dragon', name: 'Naga Kosmik Emas', price: 15000, category: 'Dragon Series', url: '/cover-dragon.jpg', desc: 'Naga emas legendaris meluncur di kabut nebula kosmik' },
+  { id: 'cyber', name: 'Cyber Stadium Night', price: 10000, category: 'Cyber Series', url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=80', desc: 'Stadion megah berlatar lampu neon modern' },
+  { id: 'aurora', name: 'Golden Sunset Aurora', price: 10000, category: 'Golden Series', url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1000&q=80', desc: 'Cahaya emas senja hangat berkilau' },
+  { id: 'abyss', name: 'Cosmic Violet Realm', price: 15000, category: 'Abyss Series', url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1000&q=80', desc: 'Galaksi ungu mistis dan gugusan bintang bersinar' },
 ];
 
 export type StyleItemConfig = {
@@ -45,11 +54,12 @@ export type CustomVoucher = {
 
 const DEFAULT_AVATAR_BORDERS: StyleItemConfig[] = [
   { id: 'classic', name: 'Solid Klasik', price: 0, category: 'Basic', desc: 'Ring solid tegas selaras warna tema', isAvailable: true },
-  { id: 'nika', name: 'Nika', price: 25000, category: 'One Piece Series', desc: 'Aura kebebasan sang dewa matahari', isAvailable: true },
-  { id: 'sasuke', name: 'Sasuke', price: 15000, category: 'Naruto Series', desc: 'Cakra ungu dengan mata kutukan', isAvailable: true },
-  { id: 'dragon', name: 'White Chinese Dragon', price: 15000, category: 'Dragon Series', desc: 'Naga putih bersinar', isAvailable: true },
-  { id: 'wanglin', name: 'Wang Lin', price: 15000, category: 'Renegade Series', desc: 'Aura spiritual kuno', isAvailable: true },
-  { id: 'wanglin2', name: 'Wang Lin II', price: 25000, category: 'Renegade Series', desc: 'Evolusi aura spiritual tingkat dewa', isAvailable: true },
+  { id: 'dewa_kuno', name: '亗 Dewa Kuno (Ancient God)', price: 30000, category: 'Renegade Series', desc: 'Mahkota suci emas, bintang kristal 3D, dan sayap surgawi dewa kuno', isAvailable: true },
+  { id: 'wanglin', name: 'Wang Lin (Slaughter Flame)', price: 15000, category: 'Renegade Series', desc: 'Aura spiritual domain pembantaian berapi merah emas', isAvailable: true },
+  { id: 'wanglin2', name: 'Wang Lin II (Cosmic Void)', price: 25000, category: 'Renegade Series', desc: 'Evolusi aura spiritual tingkat dewa galaksi kosmik', isAvailable: true },
+  { id: 'dragon', name: 'White Imperial Dragon', price: 15000, category: 'Dragon Series', desc: 'Naga emas legendaris dengan mutiara naga bersinar', isAvailable: true },
+  { id: 'nika', name: 'Sun God Nika', price: 25000, category: 'One Piece Series', desc: 'Aura kebebasan sang dewa matahari dengan petir keemasan', isAvailable: true },
+  { id: 'sasuke', name: 'Sasuke Susanoo', price: 15000, category: 'Naruto Series', desc: 'Cakra ungu Susanoo dengan mata Sharingan berputar', isAvailable: true },
 ];
 
 const AVATAR_BORDERS = DEFAULT_AVATAR_BORDERS;
@@ -87,6 +97,7 @@ type User = {
   wa: string;
   id: string;
   password?: string;
+  passwordHash?: string;
   paymentCycle?: 'mingguan' | 'bulanan';
   isPaid?: boolean;
   lastPaymentDate?: string | null;
@@ -94,12 +105,15 @@ type User = {
   role?: 'member' | 'admin';
   status?: 'pending' | 'active' | 'rejected';
   avatarUrl?: string;
+  coverUrl?: string;
   jerseyNumber?: string;
   bio?: string;
   themeColor?: string;
   avatarBorder?: string;
+  nickStyle?: string;
   points?: number;
   ownedBorders?: string[];
+  ownedCovers?: string[];
   joinedDate?: string;
 };
 
@@ -153,6 +167,28 @@ function PlayerAvatar({
     >
       <div className={`${sizeStyles.wrapper} relative flex items-center justify-center`}>
         {/* ================= ANIMATED BORDER LAYERS (Hanya Border yang Bergerak) ================= */}
+        {borderStyle === 'dewa_kuno' && (
+          <>
+            {/* Outer Divine Ancient God Celestial Halo */}
+            <div className="absolute -inset-2.5 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 blur-[8px] opacity-90 animate-dewa-pulse pointer-events-none" />
+            
+            {/* Layer 1: Rotating Ancient Golden Rune Ring */}
+            <div className="absolute -inset-0.5 rounded-full bg-[conic-gradient(from_0deg,#ffd700,#fff5c0,#d4af37,#ffffff,#b45309,#fef08a,#ffd700)] p-[3.5px] shadow-[0_0_22px_rgba(245,158,11,1),0_0_32px_rgba(253,224,71,0.9)] animate-flame-flow pointer-events-none" />
+            
+            {/* Layer 2: Counter-Rotating Diamond Runic Stars Ring */}
+            <div className="absolute inset-0 rounded-full border border-yellow-200/90 animate-reverse-spin pointer-events-none" />
+            
+            {/* Layer 3: Orbiting 4-Point Celestial Diamonds */}
+            <div className="absolute -inset-1 rounded-full animate-dragon-orbit pointer-events-none">
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white rotate-45 shadow-[0_0_10px_#ffffff,0_0_16px_#ffd700] block animate-star-twinkle" />
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-yellow-200 rotate-45 shadow-[0_0_10px_#fde047] block animate-star-twinkle" />
+            </div>
+            
+            {/* Inner Golden Bevel */}
+            <div className="absolute inset-[3.5px] rounded-full border-2 border-amber-300/90 pointer-events-none" />
+          </>
+        )}
+
         {borderStyle === 'nika' && (
           <>
             {/* Outer Solar Flame / Steam Aura */}
@@ -248,6 +284,44 @@ function PlayerAvatar({
         </div>
 
         {/* ================= FRAME EMBELLISHMENTS & BADGES (Z-20) ================= */}
+        {/* Dewa Kuno (Ancient God) Embellishments */}
+        {!isSmall && borderStyle === 'dewa_kuno' && (
+          <>
+            {/* Top Ancient God Sovereign Golden Crown with Ruby Gem */}
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center pointer-events-none filter drop-shadow-[0_2px_8px_rgba(245,158,11,1)]" title="Mahkota Dewa Kuno">
+              <svg viewBox="0 0 28 14" className="w-8 h-4">
+                <path d="M2 14 L5 4 L10 9 L14 1 L18 9 L23 4 L26 14 Z" fill="url(#goldCrownGrad)" stroke="#ffd700" strokeWidth="0.8" />
+                <circle cx="14" cy="5" r="1.5" fill="#ef4444" stroke="#ffffff" strokeWidth="0.5" />
+                <circle cx="5" cy="4" r="1" fill="#ffffff" />
+                <circle cx="23" cy="4" r="1" fill="#ffffff" />
+                <defs>
+                  <linearGradient id="goldCrownGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#fff8db" />
+                    <stop offset="50%" stopColor="#ffd700" />
+                    <stop offset="100%" stopColor="#b45309" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+
+            {/* Bottom Imperial Gold Sovereign Plaque / Wings */}
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center pointer-events-none filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]" title="Segel Dewa Kuno">
+              <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-600 border border-yellow-200 text-[8px] font-black text-black tracking-widest shadow-md">
+                <span>亗</span>
+              </div>
+            </div>
+
+            {/* Right Diamond Star Sparkle */}
+            <span className="absolute top-1/2 -right-2.5 -translate-y-1/2 z-20 text-[12px] text-yellow-100 animate-star-twinkle drop-shadow-[0_0_6px_rgba(255,255,255,1)] pointer-events-none" title="Bintang Surgawi">
+              ✦
+            </span>
+            {/* Left Diamond Star Sparkle */}
+            <span className="absolute top-1/2 -left-2.5 -translate-y-1/2 z-20 text-[12px] text-yellow-100 animate-star-twinkle drop-shadow-[0_0_6px_rgba(255,255,255,1)] pointer-events-none" title="Bintang Surgawi">
+              ✦
+            </span>
+          </>
+        )}
+
         {/* Nika Series Embellishments */}
         {!isSmall && borderStyle === 'nika' && (
           <>
@@ -493,6 +567,8 @@ export default function Page() {
   const [selectedMember, setSelectedMember] = useState<User | null>(null);
   const [editingThemeColor, setEditingThemeColor] = useState<string>('#d4af37');
   const [editingAvatarBorder, setEditingAvatarBorder] = useState<string>('classic');
+  const [editingCoverUrl, setEditingCoverUrl] = useState<string>('/cover-ancient-god.jpg');
+  const [editingNickStyle, setEditingNickStyle] = useState<string>('dewa');
   
   const [loginError, setLoginError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -535,6 +611,7 @@ export default function Page() {
   // Community Chat State
   const [communityMessages, setCommunityMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
+  const [lastChatSendTime, setLastChatSendTime] = useState<number>(0);
   const [activeChatTab, setActiveChatTab] = useState<'chat' | 'members'>('chat');
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const communityChatEndRef = useRef<HTMLDivElement>(null);
@@ -560,12 +637,12 @@ export default function Page() {
   
 
   // Deco & Points State
-  const [decoTab, setDecoTab] = useState<'deco' | 'kado' | 'voucher' | 'riwayat'>('deco');
+  const [decoTab, setDecoTab] = useState<'deco' | 'covers' | 'kado' | 'voucher' | 'riwayat'>('deco');
   const [voucherInput, setVoucherInput] = useState('');
   const [voucherFeedback, setVoucherFeedback] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   const [kadoRecipientWa, setKadoRecipientWa] = useState('');
   const [kadoAmount, setKadoAmount] = useState('');
-  const [kadoBorderId, setKadoBorderId] = useState('nika');
+  const [kadoBorderId, setKadoBorderId] = useState('dewa_kuno');
 
   const handleBuyBorder = async (borderId: string, price: number) => {
     if (!user) return;
@@ -610,6 +687,55 @@ export default function Page() {
     try {
       await updateDoc(doc(db, "users", user.wa), {
         avatarBorder: borderId
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleBuyCover = async (coverUrl: string, price: number) => {
+    if (!user) return;
+    if (user.role === 'admin') {
+      const currentOwned = user.ownedCovers || ['/cover-ancient-god.jpg'];
+      const newOwned = currentOwned.includes(coverUrl) ? currentOwned : [...currentOwned, coverUrl];
+      setUser({ ...user, coverUrl, ownedCovers: newOwned });
+      alert('Sampul profil berhasil diaktifkan untuk Admin!');
+      return;
+    }
+
+    if ((user.points || 0) < price) {
+      alert('Poin kamu tidak cukup untuk membeli sampul ini!');
+      return;
+    }
+    const currentOwned = user.ownedCovers || ['/cover-ancient-god.jpg'];
+    if (currentOwned.includes(coverUrl)) {
+      alert('Sampul ini sudah kamu miliki!');
+      return;
+    }
+    
+    try {
+      await updateDoc(doc(db, "users", user.wa), {
+        points: (user.points || 0) - price,
+        ownedCovers: [...currentOwned, coverUrl],
+        coverUrl
+      });
+      alert('Selamat! Sampul profil berhasil dibeli dan langsung dipakai.');
+    } catch (err) {
+      console.error(err);
+      alert('Gagal membeli sampul profil. Silakan coba lagi.');
+    }
+  };
+
+  const handleEquipCover = async (coverUrl: string) => {
+    if (!user) return;
+    if (user.role === 'admin') {
+      setUser({ ...user, coverUrl });
+      alert('Sampul profil berhasil dipakai!');
+      return;
+    }
+    try {
+      await updateDoc(doc(db, "users", user.wa), {
+        coverUrl
       });
     } catch (err) {
       console.error(err);
@@ -804,8 +930,15 @@ export default function Page() {
     e.preventDefault();
     if (!chatInput.trim() || !user) return;
 
-    const text = chatInput.trim();
+    const now = Date.now();
+    if (user.role !== 'admin' && now - lastChatSendTime < 1500) {
+      alert('Tunggu 1-2 detik sebelum mengirim pesan berikutnya.');
+      return;
+    }
+
+    const text = chatInput.trim().slice(0, 1000); // Batasi panjang pesan
     setChatInput('');
+    setLastChatSendTime(now);
     const newMsg: Omit<ChatMessage, 'id'> = {
       senderId: user.id || user.wa,
       senderName: user.nama,
@@ -816,7 +949,7 @@ export default function Page() {
       senderAvatarBorder: user.avatarBorder || 'classic',
       role: user.role || 'member',
       text,
-      timestamp: Date.now()
+      timestamp: now
     };
 
     try {
@@ -964,33 +1097,43 @@ export default function Page() {
     await setDoc(doc(db, "settings", "global"), newSettings);
   };
 
-  const handleRegister = (e: FormEvent<HTMLFormElement>) => {
+  const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const wa = formData.get('wa') as string;
-    const nama = formData.get('nama') as string;
+    const wa = (formData.get('wa') as string)?.trim();
+    const nama = (formData.get('nama') as string)?.trim();
     const posisi = formData.get('posisi') as string;
-    const password = formData.get('password') as string;
+    const password = (formData.get('password') as string)?.trim();
+
+    if (!wa || !nama || !password) {
+      alert('Mohon isi semua data dengan lengkap.');
+      return;
+    }
+
+    const passHash = await hashPassword(password);
 
     const newUser: User = {
       nama,
       posisi,
       wa,
       id: `FTS${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}-2K26`,
-      password,
+      passwordHash: passHash,
       status: 'pending',
       points: 25000,
       ownedBorders: ['classic'],
       avatarBorder: 'classic'
     };
 
-    // Save to Firestore
-    setDoc(doc(db, "users", wa), newUser).then(() => {
+    // Save to Firestore with hashed credential
+    try {
+      await setDoc(doc(db, "users", wa), newUser);
       localStorage.setItem('futsar_user_wa', wa);
       setUser(newUser);
       setActiveModal(null);
-    });
-    
+    } catch (err) {
+      console.error("Register error:", err);
+      alert("Gagal melakukan pendaftaran. Silakan coba lagi.");
+    }
   };
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
@@ -1018,21 +1161,36 @@ export default function Page() {
       return;
     }
 
-    const userDoc = await getDoc(doc(db, "users", wa));
-    
-    if (userDoc.exists()) {
-      const savedAccount = userDoc.data() as User;
-      if (savedAccount.password === password) {
-        if (savedAccount.role === 'admin') {
-          localStorage.setItem('futsar_user_wa', 'ADMIN');
-        } else {
-          localStorage.setItem('futsar_user_wa', wa);
+    try {
+      const userDoc = await getDoc(doc(db, "users", wa));
+      
+      if (userDoc.exists()) {
+        const savedAccount = userDoc.data() as User;
+        const isValid = await verifyPassword(password, savedAccount.password, savedAccount.passwordHash);
+        
+        if (isValid) {
+          // Auto upgrade password ke hash jika masih plain text
+          if (!savedAccount.passwordHash && savedAccount.password) {
+            const newHash = await hashPassword(password);
+            updateDoc(doc(db, "users", wa), { 
+              passwordHash: newHash,
+              password: '' // Bersihkan plain password
+            }).catch(console.error);
+          }
+
+          if (savedAccount.role === 'admin') {
+            localStorage.setItem('futsar_user_wa', 'ADMIN');
+          } else {
+            localStorage.setItem('futsar_user_wa', wa);
+          }
+          setUser(savedAccount);
+          setActiveModal(null);
+          setLoginError(false);
+          return;
         }
-        setUser(savedAccount);
-        setActiveModal(null);
-        setLoginError(false);
-        return;
       }
+    } catch (err) {
+      console.error("Login verification error:", err);
     }
     
     setLoginError(true);
@@ -1054,9 +1212,11 @@ export default function Page() {
     const bio = (formData.get('bio') as string)?.trim() || '';
     const themeColor = editingThemeColor || user.themeColor || '#d4af37';
     const avatarBorder = editingAvatarBorder || user.avatarBorder || 'classic';
+    const coverUrl = editingCoverUrl || user.coverUrl || '/cover-ancient-god.jpg';
+    const nickStyle = editingNickStyle || user.nickStyle || 'dewa';
 
     if (user.wa === 'ADMIN' || user.role === 'admin') {
-      const updatedAdmin = { ...user, posisi, jerseyNumber, bio, themeColor, avatarBorder };
+      const updatedAdmin = { ...user, posisi, jerseyNumber, bio, themeColor, avatarBorder, coverUrl, nickStyle };
       setUser(updatedAdmin);
       alert('Profil Admin berhasil diperbarui!');
       setActiveModal(null);
@@ -1068,12 +1228,55 @@ export default function Page() {
       jerseyNumber, 
       bio, 
       themeColor,
-      avatarBorder
+      avatarBorder,
+      coverUrl,
+      nickStyle
     });
-    
     
     alert('Profil berhasil diperbarui!');
     setActiveModal(null);
+  };
+
+  const handleProfileCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user) return;
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = document.createElement('img');
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 960;
+          const MAX_HEIGHT = 540;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          
+          setEditingCoverUrl(dataUrl);
+          if (user.wa !== 'ADMIN') {
+            updateDoc(doc(db, "users", user.wa), { coverUrl: dataUrl }).catch(console.error);
+          }
+        };
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleProfileAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1614,33 +1817,100 @@ export default function Page() {
             {activeModal === 'profile' && user && (
               <>
                 <h2 className="text-[#d4af37] text-[22px] font-black uppercase tracking-[1px] mt-2 mb-4 border-b border-[#333] pb-2 flex items-center justify-between">
-                  <span>Edit Profil</span>
+                  <span>Edit Profil & Style</span>
                   <span className="text-[11px] font-mono text-[#888] font-normal">{user.id}</span>
                 </h2>
                 <form onSubmit={handleUpdateProfile} className="space-y-4 text-left">
-                  {/* Avatar Upload & Live Border Preview */}
-                  <div className="flex flex-col items-center gap-2 p-3 bg-white/[0.02] border border-white/5 rounded-2xl">
-                    <div className="relative group cursor-pointer">
-                      <PlayerAvatar 
-                        user={user} 
-                        customThemeColor={editingThemeColor}
-                        customBorder={editingAvatarBorder}
-                        size="xl" 
-                      />
-                      <label className="absolute inset-0 flex items-center justify-center bg-black/65 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                        <Camera size={22} className="text-white" />
-                        <input type="file" accept="image/*" onChange={handleProfileAvatarUpload} className="hidden" />
+                  {/* LIVE PROFILE CARD PREVIEW (Sampul + Avatar + Nama) */}
+                  <div className="rounded-2xl border border-white/10 overflow-hidden relative shadow-lg bg-[#141414]">
+                    {/* Top Cover Banner Preview */}
+                    <div 
+                      className="h-28 w-full relative bg-cover bg-center flex items-end justify-center p-2"
+                      style={{
+                        backgroundImage: `url(${editingCoverUrl || user.coverUrl || '/cover-ancient-god.jpg'})`
+                      }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/90 pointer-events-none" />
+                      
+                      {/* Upload Cover Button */}
+                      <label className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-black/70 hover:bg-black/90 text-white rounded-lg text-[10px] font-bold flex items-center gap-1.5 cursor-pointer border border-white/20 shadow-sm transition-all z-20">
+                        <ImageIcon size={12} className="text-[#ffd700]" />
+                        <span>Ganti Sampul</span>
+                        <input type="file" accept="image/*" onChange={handleProfileCoverUpload} className="hidden" />
                       </label>
                     </div>
-                    <div className="text-center">
-                      <p className="text-[11px] font-bold text-gray-200">
-                        {AVATAR_BORDERS.find(b => b.id === editingAvatarBorder)?.name || 'Solid Klasik'}
+
+                    {/* Centered Avatar with Selected Border */}
+                    <div className="px-4 pb-4 text-center -mt-10 flex flex-col items-center relative z-10">
+                      <div className="relative group cursor-pointer mb-2">
+                        <PlayerAvatar 
+                          user={user} 
+                          customThemeColor={editingThemeColor}
+                          customBorder={editingAvatarBorder}
+                          customAvatarUrl={user.avatarUrl}
+                          size="xl" 
+                        />
+                        <label className="absolute inset-0 flex items-center justify-center bg-black/65 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                          <Camera size={22} className="text-white" />
+                          <input type="file" accept="image/*" onChange={handleProfileAvatarUpload} className="hidden" />
+                        </label>
+                      </div>
+
+                      <h4 className="text-sm font-black text-white capitalize tracking-wide flex items-center justify-center gap-1 text-gold-3d-diamond">
+                        <span>亗</span> {user.nama} <span>亗</span>
+                      </h4>
+                      <p className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>{user.posisi || 'Member'}</span>
+                        <span>•</span>
+                        <span className="text-[#ffd700]">{AVATAR_BORDERS.find(b => b.id === editingAvatarBorder)?.name || 'Solid Klasik'}</span>
                       </p>
-                      <p className="text-[10px] text-[#888] tracking-wider">Ketuk foto untuk mengganti file avatar</p>
                     </div>
                   </div>
 
-                  {/* PILIH BORDER PROFIL (AVATAR FRAME) - HANYA DEFAULT & YANG SUDAH DIBELI */}
+                  {/* PILIH SAMPUL PROFIL (COVER WALLPAPERS) */}
+                  <div>
+                    <label className="block text-[11px] text-[#aaa] font-bold uppercase mb-1.5 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <ImageIcon size={13} className="text-[#ffd700]" /> Sampul Profil (Cover)
+                      </span>
+                      <span className="text-[10px] text-[#ffd700] font-semibold">
+                        {PROFILE_COVERS.find(c => c.url === editingCoverUrl)?.name || 'Kustom'}
+                      </span>
+                    </label>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {PROFILE_COVERS.map((cover) => {
+                        const isSelected = (editingCoverUrl || user.coverUrl || '/cover-ancient-god.jpg') === cover.url;
+                        return (
+                          <button
+                            key={cover.id}
+                            type="button"
+                            onClick={() => setEditingCoverUrl(cover.url)}
+                            className={`group h-16 rounded-xl relative overflow-hidden border text-left transition-all cursor-pointer ${
+                              isSelected 
+                                ? 'border-[#ffd700] ring-2 ring-[#ffd700] shadow-[0_0_12px_rgba(255,215,0,0.3)] scale-[1.02]' 
+                                : 'border-white/10 opacity-70 hover:opacity-100 hover:border-white/30'
+                            }`}
+                          >
+                            <img src={cover.url} alt={cover.name} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-1.5 flex flex-col justify-end">
+                              <span className="text-[10px] font-black text-white leading-tight truncate drop-shadow-md">
+                                {cover.name}
+                              </span>
+                            </div>
+                            {isSelected && (
+                              <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#ffd700] text-black flex items-center justify-center font-black text-[9px] shadow-sm">
+                                <Check size={10} strokeWidth={3} />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* PILIH BORDER PROFIL (AVATAR FRAME) */}
                   {(() => {
                     const ownedAndDefaultBorders = getMergedBorders(settings).filter(
                       b => b.id === 'classic' || (b.price === 0) || (user?.ownedBorders || []).includes(b.id) || user?.avatarBorder === b.id || user?.role === 'admin'
@@ -1665,7 +1935,7 @@ export default function Page() {
                                 key={borderOpt.id}
                                 type="button"
                                 onClick={() => setEditingAvatarBorder(borderOpt.id)}
-                                className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                                className={`p-2 rounded-xl border text-left transition-all flex items-center gap-2 cursor-pointer ${
                                   isSelected
                                     ? 'bg-white/[0.08] border-[#d4af37] shadow-[0_0_12px_rgba(212,175,55,0.25)] ring-1 ring-[#d4af37]'
                                     : 'bg-[#151515]/60 border-white/10 hover:border-white/20 hover:bg-white/[0.04]'
@@ -1701,7 +1971,7 @@ export default function Page() {
                               onClick={() => setActiveModal('deco')}
                               className="text-[#ffd700] hover:underline flex items-center gap-1 font-bold cursor-pointer"
                             >
-                              <Sparkles size={11} /> Beli di Futsar Style &rarr;
+                              <Sparkles size={11} /> Buka Toko Futsar Style &rarr;
                             </button>
                           </div>
                         )}
@@ -2099,49 +2369,167 @@ export default function Page() {
                 <div className="flex items-center gap-1.5 bg-[#141414] p-1.5 rounded-2xl border border-[#282828] mb-5 overflow-x-auto scrollbar-none">
                   <button
                     onClick={() => setDecoTab('deco')}
-                    className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`flex-1 min-w-[85px] py-2 px-2.5 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                       decoTab === 'deco'
                         ? 'bg-[#ffd700] text-black shadow-md font-black'
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <Sparkles size={14} /> Style Toko
+                    <Sparkles size={13} /> Border Avatar
+                  </button>
+                  <button
+                    onClick={() => setDecoTab('covers')}
+                    className={`flex-1 min-w-[85px] py-2 px-2.5 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      decoTab === 'covers'
+                        ? 'bg-[#ffd700] text-black shadow-md font-black'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <ImageIcon size={13} /> Sampul Profil
                   </button>
                   <button
                     onClick={() => setDecoTab('kado')}
-                    className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`flex-1 min-w-[80px] py-2 px-2.5 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                       decoTab === 'kado'
                         ? 'bg-[#ffd700] text-black shadow-md font-black'
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <Gift size={14} /> Kirim Kado
+                    <Gift size={13} /> Kirim Kado
                   </button>
                   <button
                     onClick={() => setDecoTab('voucher')}
-                    className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`flex-1 min-w-[80px] py-2 px-2.5 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                       decoTab === 'voucher'
                         ? 'bg-[#ffd700] text-black shadow-md font-black'
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <Ticket size={14} /> Kode Voucher
+                    <Ticket size={13} /> Voucher
                   </button>
                   <button
                     onClick={() => setDecoTab('riwayat')}
-                    className={`flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`flex-1 min-w-[80px] py-2 px-2.5 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                       decoTab === 'riwayat'
                         ? 'bg-[#ffd700] text-black shadow-md font-black'
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <Clock size={14} /> Koleksi & Riwayat
+                    <Clock size={13} /> Koleksi
                   </button>
                 </div>
 
                 {/* TAB 1: FUTSAR STYLE (Avatar Border Store) */}
                 {decoTab === 'deco' && (
                   <div className="flex flex-col gap-6 max-h-[55vh] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-[#ffd700]">
+                    {/* Dewa Kuno & Renegade Series (PRIORITY) */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                        <h3 className="text-white font-black text-sm uppercase tracking-wider flex items-center gap-1.5">
+                          <span className="text-[#ffd700]">亗</span> Dewa Kuno & Renegade Series <span className="text-[#ffd700]">亗</span>
+                        </h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                        {getMergedBorders(settings).filter(b => b.category === 'Renegade Series').map((border) => {
+                          const isOwned = user?.ownedBorders?.includes(border.id) || user?.role === 'admin';
+                          const isActive = user?.avatarBorder === border.id;
+                          const isAvailable = border.isAvailable !== false;
+                          return (
+                            <div key={border.id} className={`bg-[#181818] p-4 rounded-2xl flex flex-col items-center gap-3 text-center border-2 transition-all relative overflow-hidden ${isActive ? 'border-cyan-400 bg-cyan-500/5 shadow-[0_0_25px_rgba(6,182,212,0.25)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
+                              {!isAvailable && (
+                                <span className="absolute top-2 right-2 bg-red-500/80 text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase z-10">Tutup</span>
+                              )}
+                              <div className="py-2 flex items-center justify-center">
+                                <PlayerAvatar user={user} size="2xl" customBorder={border.id} />
+                              </div>
+                              <div className="w-full flex flex-col items-center">
+                                <span className="text-white font-black text-base flex items-center gap-1">
+                                  <span>{border.name}</span>
+                                </span>
+                                <span className="text-[11px] text-gray-400 line-clamp-1">{border.desc}</span>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <span className="text-xs font-bold text-emerald-400">Rp {border.price.toLocaleString()}</span>
+                                  <span className="text-[10px] text-gray-500">•</span>
+                                  <span className="text-xs font-bold text-[#ffd700] flex items-center gap-1">
+                                    <Star size={10} fill="#ffd700" /> {border.price.toLocaleString()} Poin
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="mt-auto pt-2 w-full">
+                                {isActive ? (
+                                  <button disabled className="w-full py-2.5 bg-cyan-500 text-black font-black rounded-xl text-xs uppercase cursor-default shadow-md">Sedang Dipakai</button>
+                                ) : isOwned ? (
+                                  <button onClick={() => handleEquipBorder(border.id)} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl text-xs font-bold uppercase transition-all cursor-pointer">Pakai</button>
+                                ) : !isAvailable ? (
+                                  <button disabled className="w-full py-2.5 bg-gray-800 text-gray-500 font-bold rounded-xl text-xs uppercase cursor-not-allowed">Stok Habis</button>
+                                ) : (
+                                  <button 
+                                    onClick={() => handleBuyBorder(border.id, border.price)}
+                                    className="w-full py-2.5 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-black font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                                  >
+                                    Beli
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Dragon Series */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-2 h-2 rounded-full bg-amber-300"></span>
+                        <h3 className="text-white font-black text-sm uppercase tracking-wider">Dragon Series</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                        {getMergedBorders(settings).filter(b => b.category === 'Dragon Series').map((border) => {
+                          const isOwned = user?.ownedBorders?.includes(border.id) || user?.role === 'admin';
+                          const isActive = user?.avatarBorder === border.id;
+                          const isAvailable = border.isAvailable !== false;
+                          return (
+                            <div key={border.id} className={`bg-[#181818] p-4 rounded-2xl flex flex-col items-center gap-3 text-center border-2 transition-all relative overflow-hidden ${isActive ? 'border-amber-400 bg-amber-500/5 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
+                              {!isAvailable && (
+                                <span className="absolute top-2 right-2 bg-red-500/80 text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase z-10">Tutup</span>
+                              )}
+                              <div className="py-2 flex items-center justify-center">
+                                <PlayerAvatar user={user} size="2xl" customBorder={border.id} />
+                              </div>
+                              <div className="w-full flex flex-col items-center">
+                                <span className="text-white font-black text-base">{border.name}</span>
+                                <span className="text-[11px] text-gray-400 line-clamp-1">{border.desc}</span>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <span className="text-xs font-bold text-emerald-400">Rp {border.price.toLocaleString()}</span>
+                                  <span className="text-[10px] text-gray-500">•</span>
+                                  <span className="text-xs font-bold text-[#ffd700] flex items-center gap-1">
+                                    <Star size={10} fill="#ffd700" /> {border.price.toLocaleString()} Poin
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="mt-auto pt-2 w-full">
+                                {isActive ? (
+                                  <button disabled className="w-full py-2.5 bg-amber-500 text-black font-black rounded-xl text-xs uppercase cursor-default shadow-md">Sedang Dipakai</button>
+                                ) : isOwned ? (
+                                  <button onClick={() => handleEquipBorder(border.id)} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl text-xs font-bold uppercase transition-all cursor-pointer">Pakai</button>
+                                ) : !isAvailable ? (
+                                  <button disabled className="w-full py-2.5 bg-gray-800 text-gray-500 font-bold rounded-xl text-xs uppercase cursor-not-allowed">Stok Habis</button>
+                                ) : (
+                                  <button 
+                                    onClick={() => handleBuyBorder(border.id, border.price)}
+                                    className="w-full py-2.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-black font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                                  >
+                                    Beli
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
                     {/* One Piece Series */}
                     <div>
                       <div className="flex items-center gap-2 mb-3">
@@ -2246,110 +2634,6 @@ export default function Page() {
                       </div>
                     </div>
 
-                    {/* Dragon Series */}
-                    <div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="w-2 h-2 rounded-full bg-amber-300"></span>
-                        <h3 className="text-white font-black text-sm uppercase tracking-wider">Dragon</h3>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-                        {getMergedBorders(settings).filter(b => b.category === 'Dragon Series').map((border) => {
-                          const isOwned = user?.ownedBorders?.includes(border.id) || user?.role === 'admin';
-                          const isActive = user?.avatarBorder === border.id;
-                          const isAvailable = border.isAvailable !== false;
-                          return (
-                            <div key={border.id} className={`bg-[#181818] p-4 rounded-2xl flex flex-col items-center gap-3 text-center border-2 transition-all relative overflow-hidden ${isActive ? 'border-amber-400 bg-amber-500/5 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
-                              {!isAvailable && (
-                                <span className="absolute top-2 right-2 bg-red-500/80 text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase z-10">Tutup</span>
-                              )}
-                              <div className="py-2 flex items-center justify-center">
-                                <PlayerAvatar user={user} size="2xl" customBorder={border.id} />
-                              </div>
-                              <div className="w-full flex flex-col items-center">
-                                <span className="text-white font-black text-base">{border.name}</span>
-                                <span className="text-[11px] text-gray-400 line-clamp-1">{border.desc}</span>
-                                <div className="mt-2 flex items-center gap-2">
-                                  <span className="text-xs font-bold text-emerald-400">Rp {border.price.toLocaleString()}</span>
-                                  <span className="text-[10px] text-gray-500">•</span>
-                                  <span className="text-xs font-bold text-[#ffd700] flex items-center gap-1">
-                                    <Star size={10} fill="#ffd700" /> {border.price.toLocaleString()} Poin
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="mt-auto pt-2 w-full">
-                                {isActive ? (
-                                  <button disabled className="w-full py-2.5 bg-amber-500 text-black font-black rounded-xl text-xs uppercase cursor-default shadow-md">Sedang Dipakai</button>
-                                ) : isOwned ? (
-                                  <button onClick={() => handleEquipBorder(border.id)} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl text-xs font-bold uppercase transition-all cursor-pointer">Pakai</button>
-                                ) : !isAvailable ? (
-                                  <button disabled className="w-full py-2.5 bg-gray-800 text-gray-500 font-bold rounded-xl text-xs uppercase cursor-not-allowed">Stok Habis</button>
-                                ) : (
-                                  <button 
-                                    onClick={() => handleBuyBorder(border.id, border.price)}
-                                    className="w-full py-2.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-black font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
-                                  >
-                                    Beli
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Renegade Series */}
-                    <div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
-                        <h3 className="text-white font-black text-sm uppercase tracking-wider">Renegade Series</h3>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-                        {getMergedBorders(settings).filter(b => b.category === 'Renegade Series').map((border) => {
-                          const isOwned = user?.ownedBorders?.includes(border.id) || user?.role === 'admin';
-                          const isActive = user?.avatarBorder === border.id;
-                          const isAvailable = border.isAvailable !== false;
-                          return (
-                            <div key={border.id} className={`bg-[#181818] p-4 rounded-2xl flex flex-col items-center gap-3 text-center border-2 transition-all relative overflow-hidden ${isActive ? 'border-cyan-400 bg-cyan-500/5 shadow-[0_0_20px_rgba(6,182,212,0.15)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
-                              {!isAvailable && (
-                                <span className="absolute top-2 right-2 bg-red-500/80 text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase z-10">Tutup</span>
-                              )}
-                              <div className="py-2 flex items-center justify-center">
-                                <PlayerAvatar user={user} size="2xl" customBorder={border.id} />
-                              </div>
-                              <div className="w-full flex flex-col items-center">
-                                <span className="text-white font-black text-base">{border.name}</span>
-                                <span className="text-[11px] text-gray-400 line-clamp-1">{border.desc}</span>
-                                <div className="mt-2 flex items-center gap-2">
-                                  <span className="text-xs font-bold text-emerald-400">Rp {border.price.toLocaleString()}</span>
-                                  <span className="text-[10px] text-gray-500">•</span>
-                                  <span className="text-xs font-bold text-[#ffd700] flex items-center gap-1">
-                                    <Star size={10} fill="#ffd700" /> {border.price.toLocaleString()} Poin
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="mt-auto pt-2 w-full">
-                                {isActive ? (
-                                  <button disabled className="w-full py-2.5 bg-cyan-500 text-black font-black rounded-xl text-xs uppercase cursor-default shadow-md">Sedang Dipakai</button>
-                                ) : isOwned ? (
-                                  <button onClick={() => handleEquipBorder(border.id)} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl text-xs font-bold uppercase transition-all cursor-pointer">Pakai</button>
-                                ) : !isAvailable ? (
-                                  <button disabled className="w-full py-2.5 bg-gray-800 text-gray-500 font-bold rounded-xl text-xs uppercase cursor-not-allowed">Stok Habis</button>
-                                ) : (
-                                  <button 
-                                    onClick={() => handleBuyBorder(border.id, border.price)}
-                                    className="w-full py-2.5 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-black font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
-                                  >
-                                    Beli
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
                     {/* Classic Series */}
                     <div>
                       <div className="flex items-center gap-2 mb-3">
@@ -2382,6 +2666,66 @@ export default function Page() {
                           );
                         })}
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: SAMPUL PROFIL (COVER WALLPAPERS STORE) */}
+                {decoTab === 'covers' && (
+                  <div className="flex flex-col gap-4 max-h-[55vh] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-[#ffd700]">
+                    <div className="bg-[#181818] p-4 rounded-2xl border border-[#333] flex items-center justify-between">
+                      <div>
+                        <h3 className="text-white font-black text-sm uppercase flex items-center gap-2">
+                          <ImageIcon size={16} className="text-[#ffd700]" /> Koleksi Sampul Profil 3D
+                        </h3>
+                        <p className="text-[11px] text-gray-400 mt-0.5">Tampilkan latar belakang eksklusif pada kartu profil dan berandamu.</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {PROFILE_COVERS.map((cover) => {
+                        const isOwned = (user?.ownedCovers || ['/cover-ancient-god.jpg']).includes(cover.url) || cover.price === 0 || user?.role === 'admin';
+                        const isActive = (user?.coverUrl || '/cover-ancient-god.jpg') === cover.url;
+                        return (
+                          <div key={cover.id} className={`bg-[#181818] rounded-2xl overflow-hidden border-2 flex flex-col transition-all ${isActive ? 'border-[#ffd700] shadow-[0_0_20px_rgba(255,215,0,0.2)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
+                            <div className="h-28 w-full relative">
+                              <img src={cover.url} alt={cover.name} className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+                              <span className="absolute top-2 right-2 bg-black/70 text-[#ffd700] font-black text-[10px] px-2 py-0.5 rounded-full border border-[#ffd700]/30 uppercase">
+                                {cover.category}
+                              </span>
+                            </div>
+
+                            <div className="p-3.5 flex flex-col flex-1">
+                              <h4 className="text-white font-black text-sm">{cover.name}</h4>
+                              <p className="text-[11px] text-gray-400 line-clamp-1 mt-0.5">{cover.desc}</p>
+
+                              <div className="mt-2.5 flex items-center gap-2">
+                                <span className="text-xs font-bold text-emerald-400">{cover.price === 0 ? 'Gratis' : `Rp ${cover.price.toLocaleString()}`}</span>
+                                <span className="text-[10px] text-gray-500">•</span>
+                                <span className="text-xs font-bold text-[#ffd700] flex items-center gap-1">
+                                  <Star size={10} fill="#ffd700" /> {cover.price.toLocaleString()} Poin
+                                </span>
+                              </div>
+
+                              <div className="mt-3 pt-2 border-t border-white/5">
+                                {isActive ? (
+                                  <button disabled className="w-full py-2 bg-[#ffd700] text-black font-black rounded-xl text-xs uppercase cursor-default shadow-md">Sedang Dipakai</button>
+                                ) : isOwned ? (
+                                  <button onClick={() => handleEquipCover(cover.url)} className="w-full py-2 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl text-xs font-bold uppercase transition-all cursor-pointer">Pakai</button>
+                                ) : (
+                                  <button 
+                                    onClick={() => handleBuyCover(cover.url, cover.price)}
+                                    className="w-full py-2 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-black font-black rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                                  >
+                                    Beli Sampul
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -2528,14 +2872,16 @@ export default function Page() {
                 {decoTab === 'riwayat' && (
                   <div className="flex flex-col gap-4 max-h-[55vh] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-[#ffd700]">
                     <div className="bg-[#181818] p-4 rounded-2xl border border-[#333]">
-                      <h3 className="text-white font-black text-sm uppercase tracking-wider mb-3">Koleksi Border Kamu</h3>
+                      <h3 className="text-white font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <Sparkles size={16} className="text-[#ffd700]" /> Koleksi Border Avatar
+                      </h3>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {getMergedBorders(settings).filter(b => (user?.ownedBorders || ['classic']).includes(b.id) || b.id === 'classic' || user?.role === 'admin').map((border) => {
                           const isActive = user?.avatarBorder === border.id || (!user?.avatarBorder && border.id === 'classic');
                           return (
                             <div key={border.id} className="bg-[#121212] p-3 rounded-xl border border-[#2a2a2a] flex flex-col items-center text-center gap-2">
                               <PlayerAvatar user={user} size="lg" customBorder={border.id} />
-                              <span className="text-xs font-bold text-white">{border.name}</span>
+                              <span className="text-xs font-bold text-white truncate max-w-full">{border.name}</span>
                               {isActive ? (
                                 <span className="text-[10px] font-black text-[#ffd700] uppercase bg-[#ffd700]/10 px-2 py-0.5 rounded-full border border-[#ffd700]/30">Aktif</span>
                               ) : (
@@ -2548,7 +2894,34 @@ export default function Page() {
                     </div>
 
                     <div className="bg-[#181818] p-4 rounded-2xl border border-[#333]">
-                      <h3 className="text-white font-black text-sm uppercase tracking-wider mb-2">Info Saldo & Level</h3>
+                      <h3 className="text-white font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <ImageIcon size={16} className="text-[#ffd700]" /> Koleksi Sampul Profil
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {PROFILE_COVERS.filter(c => (user?.ownedCovers || ['/cover-ancient-god.jpg']).includes(c.url) || c.price === 0 || user?.role === 'admin').map((c) => {
+                          const isActive = (user?.coverUrl || '/cover-ancient-god.jpg') === c.url;
+                          return (
+                            <div key={c.id} className="bg-[#121212] rounded-xl overflow-hidden border border-[#2a2a2a] flex flex-col">
+                              <div className="h-16 w-full relative">
+                                <img src={c.url} alt={c.name} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                                <span className="absolute bottom-1.5 left-2 text-white font-bold text-xs">{c.name}</span>
+                              </div>
+                              <div className="p-2">
+                                {isActive ? (
+                                  <span className="block text-center text-[10px] font-black text-[#ffd700] uppercase bg-[#ffd700]/10 py-1 rounded-lg border border-[#ffd700]/30">Sedang Dipakai</span>
+                                ) : (
+                                  <button onClick={() => handleEquipCover(c.url)} className="text-[10px] font-bold text-white bg-white/10 hover:bg-white/20 py-1 rounded-lg uppercase w-full cursor-pointer">Gunakan Sampul</button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="bg-[#181818] p-4 rounded-2xl border border-[#333]">
+                      <h3 className="text-white font-black text-sm uppercase tracking-wider mb-2">Info Saldo & Status</h3>
                       <div className="flex justify-between items-center bg-[#111] p-3 rounded-xl border border-[#282828]">
                         <span className="text-xs text-gray-400">Total Poin Klub</span>
                         <span className="text-sm font-black text-[#ffd700] flex items-center gap-1">
@@ -3081,168 +3454,152 @@ export default function Page() {
     )}
 
       {/* --- POPUP KARTU PROFIL MEMBER (LIHAT PROFIL ANTAR ANGGOTA) --- */}
-      {selectedMember && (
-        <div 
-          className="fixed inset-0 bg-black/75 backdrop-blur-md z-[550] flex justify-center items-center p-4 animate-in fade-in duration-200"
-          onClick={() => setSelectedMember(null)}
-        >
+      {selectedMember && (() => {
+        const isOnline = selectedMember.lastActive && currentTime > 0 && (currentTime - selectedMember.lastActive < 90000);
+        return (
           <div 
-            className="bg-[#121212] w-full max-w-[360px] rounded-[24px] border overflow-hidden relative shadow-[0_15px_50px_rgba(0,0,0,0.9)] animate-in zoom-in-95 duration-200"
-            style={{ borderColor: selectedMember.themeColor || '#d4af37' }}
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-[550] flex justify-center items-center p-3 sm:p-4 animate-in fade-in duration-200"
+            onClick={() => setSelectedMember(null)}
           >
-            {/* Top Banner Header with Dynamic Color */}
             <div 
-              className="h-24 w-full relative flex items-end justify-center p-4"
-              style={{
-                background: `linear-gradient(135deg, ${selectedMember.themeColor || '#d4af37'}33 0%, #121212 100%)`
-              }}
+              className="bg-[#111111] w-full max-w-[370px] rounded-[28px] border border-[#d4af37]/50 overflow-hidden relative shadow-[0_20px_60px_rgba(0,0,0,0.95)] animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
             >
-              <button 
-                onClick={() => setSelectedMember(null)} 
-                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center transition-colors cursor-pointer border border-white/10"
+              {/* Top Banner Cover with High Quality Wallpaper */}
+              <div 
+                className="h-36 w-full relative bg-cover bg-center flex items-start justify-between p-3.5"
+                style={{
+                  backgroundImage: `url(${selectedMember.coverUrl || '/cover-ancient-god.jpg'})`
+                }}
               >
-                <X size={18} />
-              </button>
-
-              {selectedMember.jerseyNumber && (
-                <div 
-                  className="absolute top-3 left-4 px-2.5 py-0.5 rounded-full text-[11px] font-black tracking-wider flex items-center gap-1 shadow-sm"
-                  style={{
-                    backgroundColor: selectedMember.themeColor || '#d4af37',
-                    color: '#000'
-                  }}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-[#111111] pointer-events-none" />
+                
+                {/* Back / Close Buttons */}
+                <button 
+                  onClick={() => setSelectedMember(null)} 
+                  className="relative z-10 w-8 h-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center transition-colors cursor-pointer border border-white/20 shadow-md backdrop-blur-sm"
+                  title="Kembali"
                 >
-                  <Shirt size={12} />
-                  <span>#{selectedMember.jerseyNumber}</span>
+                  <ArrowLeft size={16} />
+                </button>
+
+                <div className="relative z-10 flex items-center gap-2">
+                  {selectedMember.jerseyNumber && (
+                    <div 
+                      className="px-2.5 py-0.5 rounded-full text-[11px] font-black tracking-wider flex items-center gap-1 shadow-md bg-gradient-to-r from-[#ffd700] to-amber-500 text-black border border-white/30"
+                    >
+                      <Shirt size={12} />
+                      <span>#{selectedMember.jerseyNumber}</span>
+                    </div>
+                  )}
+
+                  <button 
+                    onClick={() => setSelectedMember(null)} 
+                    className="w-8 h-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center transition-colors cursor-pointer border border-white/20 shadow-md backdrop-blur-sm"
+                    title="Tutup"
+                  >
+                    <X size={16} />
+                  </button>
                 </div>
-              )}
-            </div>
-
-            {/* Avatar & Player Info */}
-            <div className="px-5 pb-6 text-center -mt-12 flex flex-col items-center">
-              <div className="mb-3">
-                <PlayerAvatar 
-                  user={selectedMember} 
-                  size="xl" 
-                  showOnline={true}
-                />
               </div>
 
-              <h3 className="text-xl font-black text-white capitalize tracking-wide flex items-center justify-center gap-2">
-                {selectedMember.nama}
-              </h3>
+              {/* Avatar & Player Info */}
+              <div className="px-5 pb-6 text-center -mt-14 flex flex-col items-center relative z-10">
+                <div className="mb-2.5 relative">
+                  <PlayerAvatar 
+                    user={selectedMember} 
+                    size="2xl" 
+                    showOnline={true}
+                  />
+                </div>
 
-              <div className="flex items-center gap-2 mt-1.5 flex-wrap justify-center">
-                <span 
-                  className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border"
-                  style={{
-                    color: selectedMember.themeColor || '#d4af37',
-                    borderColor: `${selectedMember.themeColor || '#d4af37'}50`,
-                    backgroundColor: `${selectedMember.themeColor || '#d4af37'}15`
-                  }}
-                >
-                  {selectedMember.posisi || 'Member'}
-                </span>
-                <span className="text-[10px] font-mono text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/10">
-                  {selectedMember.id || 'FUTSAR-MEMBER'}
-                </span>
-                {selectedMember.role === 'admin' && (
-                  <span className="bg-[#e53e3e]/20 text-[#e53e3e] border border-[#e53e3e]/40 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">
-                    Admin
-                  </span>
-                )}
-                {selectedMember.avatarBorder && selectedMember.avatarBorder !== 'classic' && (
-                  <span className="bg-[#d4af37]/15 text-[#d4af37] border border-[#d4af37]/30 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase flex items-center gap-1">
-                    <Award size={10} /> {AVATAR_BORDERS.find(b => b.id === selectedMember.avatarBorder)?.name || selectedMember.avatarBorder}
-                  </span>
-                )}
-              </div>
+                {/* Nickname with 3D Diamond / Gold typography */}
+                <h3 className="text-xl font-black tracking-wide text-center text-gold-3d-diamond flex items-center justify-center gap-1.5 mt-0.5">
+                  <span className="text-[#ffd700] text-sm">亗</span>
+                  <span>{selectedMember.nama}</span>
+                  <span className="text-[#ffd700] text-sm">亗</span>
+                </h3>
 
-              {/* Bio / Motto */}
-              {selectedMember.bio ? (
-                <div className="mt-4 p-3 rounded-xl bg-white/[0.03] border border-white/5 w-full">
-                  <p className="text-xs italic text-gray-300 leading-relaxed">
-                    &ldquo;{selectedMember.bio}&rdquo;
+                {/* Subtitle Status */}
+                <div className="flex items-center justify-center gap-2 mt-1 text-[11px] text-gray-400 font-semibold">
+                  <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]' : 'bg-gray-500'}`} />
+                  <span>{isOnline ? 'Online Sekarang' : 'Aktif baru-baru ini'}</span>
+                  <span>•</span>
+                  <span className="text-gray-400">Resmi Futsar Club</span>
+                </div>
+
+                {/* 3 Highlight Badges (Pills) */}
+                <div className="grid grid-cols-3 gap-2 w-full mt-4">
+                  <div className="bg-[#181818] border border-white/10 p-2 rounded-xl flex flex-col items-center justify-center text-center">
+                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">ID Anggota</span>
+                    <span className="text-xs font-mono font-black text-white mt-0.5">#{selectedMember.id || 'FTS-001'}</span>
+                  </div>
+                  <div className="bg-[#181818] border border-[#ffd700]/40 p-2 rounded-xl flex flex-col items-center justify-center text-center shadow-[0_0_12px_rgba(255,215,0,0.08)]">
+                    <span className="text-[9px] text-[#ffd700] font-bold uppercase tracking-wider">Posisi</span>
+                    <span className="text-xs font-black text-[#ffd700] mt-0.5 truncate max-w-full">亗 {selectedMember.posisi || 'Flank'} 亗</span>
+                  </div>
+                  <div className="bg-[#181818] border border-white/10 p-2 rounded-xl flex flex-col items-center justify-center text-center">
+                    <span className="text-[9px] text-cyan-400 font-bold uppercase tracking-wider">Poin & Tier</span>
+                    <span className="text-xs font-black text-cyan-300 mt-0.5">⭐ {(selectedMember.points || 0).toLocaleString()}</span>
+                  </div>
+                </div>
+
+                {/* Bio / Motto Card */}
+                <div className="w-full mt-3.5 p-3.5 rounded-2xl bg-gradient-to-br from-white/[0.04] to-transparent border border-white/10 text-center relative overflow-hidden">
+                  <Quote size={14} className="text-[#ffd700]/50 mx-auto mb-1" />
+                  <p className="text-xs italic text-gray-200 leading-relaxed font-medium">
+                    {selectedMember.bio ? `"${selectedMember.bio}"` : '"Main tenang, oper akurat, nikmati futsal bersama Futsar Club!"'}
                   </p>
-                </div>
-              ) : (
-                <div className="mt-3 text-[11px] text-gray-500 italic">
-                  Belum menuliskan motto pemain.
-                </div>
-              )}
-
-              {/* Status Online & Info Details */}
-              <div className="w-full mt-4 border-t border-white/10 pt-3 space-y-2 text-left">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400 flex items-center gap-1.5">
-                    <Activity size={13} className="text-gray-500" /> Status Aktivitas
-                  </span>
-                  {selectedMember.lastActive && currentTime > 0 && (currentTime - selectedMember.lastActive < 90000) ? (
-                    <span className="text-emerald-400 font-bold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Online
-                    </span>
-                  ) : (
-                    <span className="text-gray-500">Offline</span>
+                  {selectedMember.avatarBorder && selectedMember.avatarBorder !== 'classic' && (
+                    <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-center gap-1.5 text-[10px] text-gray-400">
+                      <Award size={12} className="text-[#ffd700]" />
+                      <span>Border: <strong className="text-[#ffd700]">{AVATAR_BORDERS.find(b => b.id === selectedMember.avatarBorder)?.name || selectedMember.avatarBorder}</strong></span>
+                    </div>
                   )}
                 </div>
 
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400 flex items-center gap-1.5">
-                    <Sparkles size={13} className="text-gray-500" /> Tema Favorit
-                  </span>
-                  <span className="font-semibold capitalize text-gray-300 flex items-center gap-1.5">
-                    <span 
-                      className="w-2.5 h-2.5 rounded-full" 
-                      style={{ backgroundColor: selectedMember.themeColor || '#d4af37' }} 
-                    />
-                    {PROFILE_THEMES.find(t => t.color === selectedMember.themeColor)?.name || 'Gold Champion'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="w-full mt-5 flex flex-col gap-2">
-                {user && user.wa === selectedMember.wa ? (
-                  <button
-                    onClick={() => {
-                      setSelectedMember(null);
-                      setActiveModal('profile');
-                    }}
-                    className="w-full py-2.5 rounded-xl text-black font-black text-xs uppercase tracking-wider transition-transform active:scale-95 shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                    style={{ backgroundColor: selectedMember.themeColor || '#d4af37' }}
-                  >
-                    <Settings size={14} /> Edit Profil Saya
-                  </button>
-                ) : (
-                  <div className="flex gap-2 w-full">
+                {/* Action Buttons */}
+                <div className="w-full mt-4 flex flex-col gap-2">
+                  {user && user.wa === selectedMember.wa ? (
                     <button
                       onClick={() => {
-                        const targetName = selectedMember.nama;
                         setSelectedMember(null);
-                        setActiveModal('community_chat');
-                        setActiveChatTab('chat');
-                        setChatInput(`@${targetName} `);
+                        setActiveModal('profile');
                       }}
-                      className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-transform active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer border border-white/10"
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#ffd700] to-amber-500 text-black font-black text-xs uppercase tracking-wider transition-transform active:scale-95 shadow-md flex items-center justify-center gap-2 cursor-pointer"
                     >
-                      <MessageSquare size={14} className="text-[#d4af37]" /> Sapa di Chat
+                      <Settings size={14} /> Edit Profil & Sampul
                     </button>
-                    {selectedMember.wa && selectedMember.wa !== 'ADMIN' && (
+                  ) : (
+                    <div className="flex gap-2 w-full">
                       <button
-                        onClick={() => window.open(`https://wa.me/${selectedMember.wa.replace(/^0/, '62')}`, '_blank')}
-                        className="flex-1 py-2.5 rounded-xl bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-white font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer border border-[#25D366]/40"
+                        onClick={() => {
+                          const targetName = selectedMember.nama;
+                          setSelectedMember(null);
+                          setActiveModal('community_chat');
+                          setActiveChatTab('chat');
+                          setChatInput(`@${targetName} `);
+                        }}
+                        className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-transform active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer border border-white/10"
                       >
-                        <MessageCircle size={14} /> WhatsApp
+                        <MessageSquare size={14} className="text-[#d4af37]" /> Sapa di Chat
                       </button>
-                    )}
-                  </div>
-                )}
+                      {selectedMember.wa && selectedMember.wa !== 'ADMIN' && (
+                        <button
+                          onClick={() => window.open(`https://wa.me/${selectedMember.wa.replace(/^0/, '62')}`, '_blank')}
+                          className="flex-1 py-2.5 rounded-xl bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-white font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer border border-[#25D366]/40"
+                        >
+                          <MessageCircle size={14} /> WhatsApp
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Global Style for the shake animation */}
       <style dangerouslySetInnerHTML={{__html: `
@@ -3558,6 +3915,15 @@ function AdminDashboard({
               <span className="hidden sm:inline">Ekspor Data CSV</span>
             </button>
           )}
+          <a
+            href="/futsar-app.zip"
+            download="futsar-app.zip"
+            className="px-3.5 py-2 bg-[#d4af37]/15 hover:bg-[#d4af37] text-[#d4af37] hover:text-black border border-[#d4af37]/40 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 cursor-pointer"
+            title="Unduh Full Source Code Project (futsar-app.zip)"
+          >
+            <Download size={16} />
+            <span className="hidden sm:inline">Unduh futsar-app.zip</span>
+          </a>
           {onOpenChat && (
             <button 
               onClick={onOpenChat}
