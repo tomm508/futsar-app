@@ -2090,8 +2090,10 @@ export default function Page() {
                     </label>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {PROFILE_COVERS.map((cover) => {
-                        const isOwned = (user?.ownedCovers || ['']).includes(cover.url) || cover.price === 0 || user?.role === 'admin';
+                      {PROFILE_COVERS.filter(cover => {
+                        return (user?.ownedCovers || ['']).includes(cover.url) || cover.price === 0 || user?.role === 'admin';
+                      }).map((cover) => {
+                        const isOwned = true;
                         const currentActiveUrl = editingCoverUrl !== undefined ? editingCoverUrl : (user.coverUrl || '');
                         const isSelected = currentActiveUrl === cover.url;
                         return (
