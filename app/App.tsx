@@ -2445,11 +2445,9 @@ export default function Page() {
                                   <span>{border.name}</span>
                                 </span>
                                 <span className="text-[11px] text-gray-400 line-clamp-1">{border.desc}</span>
-                                <div className="mt-2 flex items-center gap-2">
-                                  <span className="text-xs font-bold text-emerald-400">Rp {border.price.toLocaleString()}</span>
-                                  <span className="text-[10px] text-gray-500">•</span>
+                                <div className="mt-2 flex items-center justify-center gap-1.5">
                                   <span className="text-xs font-bold text-[#ffd700] flex items-center gap-1">
-                                    <Star size={10} fill="#ffd700" /> {border.price.toLocaleString()} Poin
+                                    <Star size={11} fill="#ffd700" /> {border.price.toLocaleString()} Poin
                                   </span>
                                 </div>
                               </div>
@@ -2497,11 +2495,9 @@ export default function Page() {
                               <div className="w-full flex flex-col items-center">
                                 <span className="text-white font-black text-base">{border.name}</span>
                                 <span className="text-[11px] text-gray-400 line-clamp-1">{border.desc}</span>
-                                <div className="mt-2 flex items-center gap-2">
-                                  <span className="text-xs font-bold text-emerald-400">Rp {border.price.toLocaleString()}</span>
-                                  <span className="text-[10px] text-gray-500">•</span>
+                                <div className="mt-2 flex items-center justify-center gap-1.5">
                                   <span className="text-xs font-bold text-[#ffd700] flex items-center gap-1">
-                                    <Star size={10} fill="#ffd700" /> {border.price.toLocaleString()} Poin
+                                    <Star size={11} fill="#ffd700" /> {border.price.toLocaleString()} Poin
                                   </span>
                                 </div>
                               </div>
@@ -2549,11 +2545,9 @@ export default function Page() {
                               <div className="w-full flex flex-col items-center">
                                 <span className="text-white font-black text-base">{border.name}</span>
                                 <span className="text-[11px] text-gray-400 line-clamp-1">{border.desc}</span>
-                                <div className="mt-2 flex items-center gap-2">
-                                  <span className="text-xs font-bold text-emerald-400">Rp {border.price.toLocaleString()}</span>
-                                  <span className="text-[10px] text-gray-500">•</span>
+                                <div className="mt-2 flex items-center justify-center gap-1.5">
                                   <span className="text-xs font-bold text-[#ffd700] flex items-center gap-1">
-                                    <Star size={10} fill="#ffd700" /> {border.price.toLocaleString()} Poin
+                                    <Star size={11} fill="#ffd700" /> {border.price.toLocaleString()} Poin
                                   </span>
                                 </div>
                               </div>
@@ -2601,11 +2595,9 @@ export default function Page() {
                               <div className="w-full flex flex-col items-center">
                                 <span className="text-white font-black text-base">{border.name}</span>
                                 <span className="text-[11px] text-gray-400 line-clamp-1">{border.desc}</span>
-                                <div className="mt-2 flex items-center gap-2">
-                                  <span className="text-xs font-bold text-emerald-400">Rp {border.price.toLocaleString()}</span>
-                                  <span className="text-[10px] text-gray-500">•</span>
+                                <div className="mt-2 flex items-center justify-center gap-1.5">
                                   <span className="text-xs font-bold text-[#ffd700] flex items-center gap-1">
-                                    <Star size={10} fill="#ffd700" /> {border.price.toLocaleString()} Poin
+                                    <Star size={11} fill="#ffd700" /> {border.price.toLocaleString()} Poin
                                   </span>
                                 </div>
                               </div>
@@ -2697,11 +2689,9 @@ export default function Page() {
                               <h4 className="text-white font-black text-sm">{cover.name}</h4>
                               <p className="text-[11px] text-gray-400 line-clamp-1 mt-0.5">{cover.desc}</p>
 
-                              <div className="mt-2.5 flex items-center gap-2">
-                                <span className="text-xs font-bold text-emerald-400">{cover.price === 0 ? 'Gratis' : `Rp ${cover.price.toLocaleString()}`}</span>
-                                <span className="text-[10px] text-gray-500">•</span>
+                              <div className="mt-2.5 flex items-center gap-1.5">
                                 <span className="text-xs font-bold text-[#ffd700] flex items-center gap-1">
-                                  <Star size={10} fill="#ffd700" /> {cover.price.toLocaleString()} Poin
+                                  <Star size={11} fill="#ffd700" /> {cover.price === 0 ? 'Gratis' : `${cover.price.toLocaleString()} Poin`}
                                 </span>
                               </div>
 
@@ -3809,7 +3799,7 @@ function AdminDashboard({
     const border = currentList.find(b => b.id === borderId);
     if (!border) return;
 
-    const input = prompt(`Atur harga baru untuk ${border.name} (Rp / Poin):`, String(border.price));
+    const input = prompt(`Atur harga baru untuk ${border.name} (Poin):`, String(border.price));
     if (input !== null && !isNaN(Number(input))) {
       const newPrice = Math.max(0, parseInt(input, 10));
       const existingConfigs = settings.styleList || [];
@@ -3822,7 +3812,7 @@ function AdminDashboard({
         updatedList = [...existingConfigs, { id: borderId, price: newPrice, isAvailable: border.isAvailable !== false }];
       }
       onUpdateSettings({ ...settings, styleList: updatedList });
-      alert(`Harga ${border.name} berhasil diubah menjadi ${newPrice.toLocaleString()} Poin / Rp!`);
+      alert(`Harga ${border.name} berhasil diubah menjadi ${newPrice.toLocaleString()} Poin!`);
     }
   };
 
@@ -4035,7 +4025,7 @@ function AdminDashboard({
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-black text-white truncate">{border.name}</p>
-                          <p className="text-[10px] text-gray-400 truncate">{border.category} • Rp {border.price.toLocaleString()}</p>
+                          <p className="text-[10px] text-gray-400 truncate">{border.category} • {border.price.toLocaleString()} Poin</p>
                         </div>
                       </div>
 
