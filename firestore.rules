@@ -11,18 +11,25 @@ service cloud.firestore {
              data.id is string;
     }
 
+    // Helper function: validasi apakah data settings memiliki format minimal yang sah
+    function isValidSettings(data) {
+      return data.adminWa is string &&
+             data.kasMingguan is number &&
+             data.kasBulanan is number;
+    }
+
     // Koleksi Users: baca profil diizinkan untuk member/komunitas, tulis divalidasi
     match /users/{userId} {
       allow read: if true;
       allow create: if isValidUser(request.resource.data);
-      allow update: if request.resource.data.wa == userId || isValidUser(request.resource.data);
-      allow delete: if false; // Mencegah penghapusan tak sengaja
+      allow update: if isValidUser(request.resource.data);
+      allow delete: if false; // Mencegah penghapusan tak sengaja dari client
     }
 
-    // Koleksi Settings Global: baca diizinkan, write dilindungi
+    // Koleksi Settings Global: baca diizinkan, write divalidasi struktur datanya
     match /settings/{settingId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if isValidSettings(request.resource.data);
     }
 
     // Koleksi Pesan Komunitas: validasi pesan masuk
@@ -42,10 +49,10 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Default fallback: proteksi dokumen tak dikenal
+    // Default fallback: proteksi penuh untuk dokumen/koleksi tak dikenal
     match /{document=**} {
       allow read: if true;
-      allow write: if true;
+      allow write: if false;
     }
   }
 }

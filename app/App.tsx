@@ -1076,13 +1076,17 @@ export default function Page() {
   const handleTransferPoints = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    const amount = Number(kadoAmount);
+    const amount = Math.floor(Number(kadoAmount));
     if (!kadoRecipientWa) {
       alert('Pilih teman penerima terlebih dahulu!');
       return;
     }
+    if (kadoRecipientWa === user.wa) {
+      alert('Kamu tidak dapat mentransfer poin ke akun kamu sendiri!');
+      return;
+    }
     if (isNaN(amount) || amount <= 0) {
-      alert('Masukkan jumlah poin yang valid!');
+      alert('Masukkan jumlah poin yang valid (angka bulat positif)!');
       return;
     }
     if ((user.points || 0) < amount && user.role !== 'admin') {

@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+function sanitizeCsvField(value: any): string {
+  let str = (value ?? '').toString();
+  // Escape CSV formula injection characters if field starts with =, +, -, @, \t, \r
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = "'" + str;
+  }
+  return `"${str.replace(/"/g, '""')}"`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { users } = await req.json();
@@ -9,15 +18,15 @@ export async function POST(req: NextRequest) {
 
     const headers = ['Nama', 'ID Member', 'Posisi', 'No Punggung', 'WhatsApp', 'Status Akun', 'Status Kas', 'Poin', 'Bio / Motto'];
     const rows = users.map((u: any) => [
-      `"${(u.nama || '').replace(/"/g, '""')}"`,
-      `"${(u.id || '').replace(/"/g, '""')}"`,
-      `"${(u.posisi || '').replace(/"/g, '""')}"`,
-      `"${(u.jerseyNumber ? '#' + u.jerseyNumber : '-').replace(/"/g, '""')}"`,
-      `"${(u.wa || '').replace(/"/g, '""')}"`,
-      `"${(u.status === 'active' ? 'Aktif' : u.status === 'pending' ? 'Menunggu' : 'Ditolak')}"`,
-      `"${(u.isPaid ? 'Lunas' : 'Belum Lunas')}"`,
-      `"${(u.points || 0)}"`,
-      `"${(u.bio || '-').replace(/"/g, '""')}"`
+      sanitizeCsvField(u.nama),
+      sanitizeCsvField(u.id),
+      sanitizeCsvField(u.posisi),
+      sanitizeCsvField(u.jerseyNumber ? '#' + u.jerseyNumber : '-'),
+      sanitizeCsvField(u.wa),
+      sanitizeCsvField(u.status === 'active' ? 'Aktif' : u.status === 'pending' ? 'Menunggu' : 'Ditolak'),
+      sanitizeCsvField(u.isPaid ? 'Lunas' : 'Belum Lunas'),
+      sanitizeCsvField(u.points || 0),
+      sanitizeCsvField(u.bio || '-')
     ]);
 
     const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
