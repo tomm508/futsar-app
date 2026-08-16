@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, FormEvent } from 'react';
 import { db } from '../lib/firebase';
 import { collection, doc, getDoc, setDoc, getDocs, updateDoc, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { hashPassword, verifyPassword } from '../lib/security';
+import { FutsarClubLogo } from '../components/FutsarLogo';
 
 import { 
   Menu, X, MapPin, Instagram, AlertTriangle, LogOut, 
@@ -1516,13 +1517,9 @@ export default function Page() {
           <nav className="z-20 px-4 md:px-8 py-4 flex justify-between items-center bg-black/40 backdrop-blur-md border-b border-[#d4af37]/20 relative">
             <div className="flex items-center gap-3">
               {/* 3D Gold Crest Logo with Diamond Stars */}
-              <div className="w-11 h-11 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(212,175,55,0.5)] border border-[#d4af37]/70 bg-black/80 flex items-center justify-center p-0.5 group shrink-0 relative">
+              <div className="w-11 h-11 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(212,175,55,0.5)] border border-[#d4af37]/70 bg-black/80 flex items-center justify-center p-1 group shrink-0 relative">
                 <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/20 via-transparent to-white/20 pointer-events-none" />
-                <img 
-                  src="/futsar-f-logo.jpg" 
-                  alt="Futsar Crest Logo" 
-                  className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(255,215,0,0.8)] group-hover:scale-110 transition-transform duration-300 relative z-10" 
-                />
+                <FutsarClubLogo className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(255,215,0,0.8)] group-hover:scale-110 transition-transform duration-300 relative z-10" />
               </div>
               <div className="flex flex-col select-none">
                 <span className="font-black tracking-[5px] text-gold-3d-diamond text-xl md:text-2xl leading-none">
@@ -3905,25 +3902,6 @@ function AdminDashboard({
           <span className="font-black tracking-[4px] text-white text-xl md:text-2xl">ADMIN PANEL</span>
         </div>
         <div className="flex items-center gap-3">
-          {onExportCSV && (
-            <button 
-              onClick={() => onExportCSV([...activeUsers, ...pendingUsers])}
-              className="px-3.5 py-2 bg-[#27ae60]/15 hover:bg-[#27ae60] text-[#27ae60] hover:text-white border border-[#27ae60]/40 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 cursor-pointer"
-              title="Unduh data seluruh member & status kas dalam format CSV"
-            >
-              <Download size={16} />
-              <span className="hidden sm:inline">Ekspor Data CSV</span>
-            </button>
-          )}
-          <a
-            href="/futsar-app.zip"
-            download="futsar-app.zip"
-            className="px-3.5 py-2 bg-[#d4af37]/15 hover:bg-[#d4af37] text-[#d4af37] hover:text-black border border-[#d4af37]/40 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 cursor-pointer"
-            title="Unduh Full Source Code Project (futsar-app.zip)"
-          >
-            <Download size={16} />
-            <span className="hidden sm:inline">Unduh futsar-app.zip</span>
-          </a>
           {onOpenChat && (
             <button 
               onClick={onOpenChat}
