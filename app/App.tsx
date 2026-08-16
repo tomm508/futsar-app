@@ -27,15 +27,37 @@ const PROFILE_THEMES = [
   { id: 'cyan', name: 'Cyber Cyan', color: '#00b4d8', border: 'border-[#00b4d8]', text: 'text-[#00b4d8]', bg: 'bg-[#00b4d8]', glow: 'rgba(0,180,216,0.4)' },
 ];
 
-export const PROFILE_COVERS = [
+export type CoverItemConfig = {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  url: string;
+  fallbackUrl: string;
+  desc: string;
+  isAvailable?: boolean;
+};
+
+export const DEFAULT_PROFILE_COVERS: CoverItemConfig[] = [
+  { 
+    id: 'none', 
+    name: 'Polos (Tanpa Sampul)', 
+    price: 0, 
+    category: 'Basic', 
+    url: '', 
+    fallbackUrl: '',
+    desc: 'Tampilan bersih dan minimalis polos tanpa gambar sampul',
+    isAvailable: true
+  },
   { 
     id: 'ancient_god', 
     name: 'Dewa Kuno Surgawi', 
-    price: 0, 
+    price: 30000, 
     category: 'Renegade Series', 
     url: '/cover-ancient-god.jpg', 
     fallbackUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1000&q=80',
-    desc: 'Aura dewa kuno emas berawan mistis & cahaya kosmik abadi' 
+    desc: 'Aura dewa kuno emas berawan mistis & cahaya kosmik abadi',
+    isAvailable: true
   },
   { 
     id: 'dragon', 
@@ -44,7 +66,8 @@ export const PROFILE_COVERS = [
     category: 'Dragon Series', 
     url: '/cover-dragon.jpg', 
     fallbackUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1000&q=80',
-    desc: 'Naga emas legendaris meluncur di kabut nebula kosmik' 
+    desc: 'Naga emas legendaris meluncur di kabut nebula kosmik',
+    isAvailable: true
   },
   { 
     id: 'cyber', 
@@ -53,7 +76,8 @@ export const PROFILE_COVERS = [
     category: 'Cyber Series', 
     url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=80', 
     fallbackUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=80',
-    desc: 'Stadion megah berlatar lampu neon modern' 
+    desc: 'Stadion megah berlatar lampu neon modern',
+    isAvailable: true
   },
   { 
     id: 'aurora', 
@@ -62,7 +86,8 @@ export const PROFILE_COVERS = [
     category: 'Golden Series', 
     url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1000&q=80', 
     fallbackUrl: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1000&q=80',
-    desc: 'Cahaya emas senja hangat berkilau' 
+    desc: 'Cahaya emas senja hangat berkilau',
+    isAvailable: true
   },
   { 
     id: 'abyss', 
@@ -71,13 +96,29 @@ export const PROFILE_COVERS = [
     category: 'Abyss Series', 
     url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1000&q=80', 
     fallbackUrl: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1000&q=80',
-    desc: 'Galaksi ungu mistis dan gugusan bintang bersinar' 
+    desc: 'Galaksi ungu mistis dan gugusan bintang bersinar',
+    isAvailable: true
   },
 ];
 
+export const PROFILE_COVERS = DEFAULT_PROFILE_COVERS;
+
 export const getCoverUrl = (url?: string): string => {
-  if (!url || url === '/cover-ancient-god.jpg') return '/cover-ancient-god.jpg';
+  if (!url) return '';
   return url;
+};
+
+export const getMergedCovers = (settings?: AppSettings): CoverItemConfig[] => {
+  if (!settings?.coverList || settings.coverList.length === 0) {
+    return DEFAULT_PROFILE_COVERS;
+  }
+  return DEFAULT_PROFILE_COVERS.map(def => {
+    const custom = settings.coverList?.find(s => s.id === def.id);
+    if (custom) {
+      return { ...def, ...custom };
+    }
+    return def;
+  });
 };
 
 export type StyleItemConfig = {
@@ -543,6 +584,7 @@ type AppSettings = {
   adminPassword?: string;
   dailyClaimPoints?: number;
   styleList?: StyleItemConfig[];
+  coverList?: CoverItemConfig[];
   customVouchers?: CustomVoucher[];
 };
 
@@ -556,6 +598,7 @@ const defaultSettings: AppSettings = {
   bgInsideUrl: '/logo-futsar.mp4',
   dailyClaimPoints: 1000,
   styleList: DEFAULT_AVATAR_BORDERS,
+  coverList: DEFAULT_PROFILE_COVERS,
   customVouchers: [
     { id: 'v1', code: 'FUTSARJUARA', rewardPoints: 5000, description: 'Bonus Selamat Datang', isActive: true },
     { id: 'v2', code: 'NIKA2026', rewardPoints: 10000, description: 'Series One Piece Promo', isActive: true },
@@ -613,7 +656,7 @@ export default function Page() {
   const [selectedMember, setSelectedMember] = useState<User | null>(null);
   const [editingThemeColor, setEditingThemeColor] = useState<string>('#d4af37');
   const [editingAvatarBorder, setEditingAvatarBorder] = useState<string>('classic');
-  const [editingCoverUrl, setEditingCoverUrl] = useState<string>('/cover-ancient-god.jpg');
+  const [editingCoverUrl, setEditingCoverUrl] = useState<string>('');
   const [editingNickStyle, setEditingNickStyle] = useState<string>('dewa');
   
   const [loginError, setLoginError] = useState(false);
@@ -771,12 +814,12 @@ export default function Page() {
 
   const handleBuyCover = async (coverUrl: string, price: number) => {
     if (!user) return;
-    const currentOwned = user.ownedCovers || ['/cover-ancient-god.jpg'];
+    const currentOwned = user.ownedCovers || [''];
 
     if (user.role === 'admin') {
       const newOwned = currentOwned.includes(coverUrl) ? currentOwned : [...currentOwned, coverUrl];
       setUser({ ...user, coverUrl, ownedCovers: newOwned });
-      alert('Sampul profil berhasil diaktifkan untuk Admin!');
+      alert(coverUrl ? 'Sampul profil berhasil diaktifkan untuk Admin!' : 'Sampul profil diubah ke Polos!');
       return;
     }
 
@@ -813,13 +856,14 @@ export default function Page() {
     setUser({ ...user, coverUrl });
 
     if (user.role === 'admin') {
-      alert('Sampul profil berhasil dipakai!');
+      alert(coverUrl ? 'Sampul profil berhasil dipakai!' : 'Sampul profil diubah ke Polos!');
       return;
     }
     try {
       await updateDoc(doc(db, "users", user.wa), {
         coverUrl
       });
+      alert(coverUrl ? 'Sampul profil berhasil dipakai!' : 'Sampul profil diubah ke Polos!');
     } catch (err) {
       console.error(err);
     }
@@ -1152,7 +1196,7 @@ export default function Page() {
     if (activeModal === 'profile' && user) {
       setEditingThemeColor(user.themeColor || '#d4af37');
       setEditingAvatarBorder(user.avatarBorder || 'classic');
-      setEditingCoverUrl(user.coverUrl || PROFILE_COVERS[0].url);
+      setEditingCoverUrl(user.coverUrl || '');
       setEditingNickStyle(user.nickStyle || 'dewa');
     }
   }, [activeModal, user]);
@@ -1327,7 +1371,7 @@ export default function Page() {
     const bio = (formData.get('bio') as string)?.trim() || '';
     const themeColor = editingThemeColor || user.themeColor || '#d4af37';
     const avatarBorder = editingAvatarBorder || user.avatarBorder || 'classic';
-    const coverUrl = editingCoverUrl || user.coverUrl || '/cover-ancient-god.jpg';
+    const coverUrl = editingCoverUrl !== undefined ? editingCoverUrl : (user.coverUrl || '');
     const nickStyle = editingNickStyle || user.nickStyle || 'dewa';
 
     if (user.wa === 'ADMIN' || user.role === 'admin') {
@@ -1936,12 +1980,16 @@ export default function Page() {
                   <div className="rounded-2xl border border-white/10 overflow-hidden relative shadow-lg bg-[#141414]">
                     {/* Top Cover Banner Preview */}
                     <div 
-                      className="h-28 w-full relative bg-cover bg-center flex items-end justify-center p-2"
+                      className="h-28 w-full relative bg-cover bg-center flex items-end justify-center p-2 bg-[#1c1c1c]"
                       style={{
-                        backgroundImage: `url(${editingCoverUrl || user.coverUrl || '/cover-ancient-god.jpg'})`
+                        backgroundImage: (editingCoverUrl || user.coverUrl) ? `url(${editingCoverUrl || user.coverUrl})` : 'none'
                       }}
                     >
+                      {/* Gradient overlay or subtle pattern when polos */}
                       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/90 pointer-events-none" />
+                      {!(editingCoverUrl || user.coverUrl) && (
+                        <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+                      )}
                       
                       {/* Upload Cover Button */}
                       <label className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-black/70 hover:bg-black/90 text-white rounded-lg text-[10px] font-bold flex items-center gap-1.5 cursor-pointer border border-white/20 shadow-sm transition-all z-20">
@@ -1992,8 +2040,8 @@ export default function Page() {
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {PROFILE_COVERS.map((cover) => {
-                        const isOwned = (user?.ownedCovers || ['/cover-ancient-god.jpg']).includes(cover.url) || cover.price === 0 || user?.role === 'admin';
-                        const currentActiveUrl = editingCoverUrl || user.coverUrl || '/cover-ancient-god.jpg';
+                        const isOwned = (user?.ownedCovers || ['']).includes(cover.url) || cover.price === 0 || user?.role === 'admin';
+                        const currentActiveUrl = editingCoverUrl !== undefined ? editingCoverUrl : (user.coverUrl || '');
                         const isSelected = currentActiveUrl === cover.url;
                         return (
                           <button
@@ -2015,16 +2063,24 @@ export default function Page() {
                                 : 'border-white/10 opacity-50 hover:opacity-80'
                             }`}
                           >
-                            <img 
-                              src={cover.url} 
-                              alt={cover.name} 
-                              onError={(e) => {
-                                if (cover.fallbackUrl && e.currentTarget.src !== cover.fallbackUrl) {
-                                  e.currentTarget.src = cover.fallbackUrl;
-                                }
-                              }}
-                              className="w-full h-full object-cover" 
-                            />
+                            {cover.url ? (
+                              <img 
+                                src={cover.url} 
+                                alt={cover.name} 
+                                onError={(e) => {
+                                  if (cover.fallbackUrl && e.currentTarget.src !== cover.fallbackUrl) {
+                                    e.currentTarget.src = cover.fallbackUrl;
+                                  }
+                                }}
+                                className="w-full h-full object-cover" 
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-[#1e1e1e] flex items-center justify-center">
+                                <div className="w-8 h-8 rounded-full border border-dashed border-gray-600 flex items-center justify-center text-gray-500">
+                                  <ImageIcon size={14} />
+                                </div>
+                              </div>
+                            )}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-1.5 flex flex-col justify-end">
                               <span className="text-[10px] font-black text-white leading-tight truncate drop-shadow-md">
                                 {cover.name}
@@ -2809,23 +2865,36 @@ export default function Page() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {PROFILE_COVERS.map((cover) => {
-                        const isOwned = (user?.ownedCovers || ['/cover-ancient-god.jpg']).includes(cover.url) || cover.price === 0 || user?.role === 'admin';
-                        const isActive = (user?.coverUrl || '/cover-ancient-god.jpg') === cover.url;
+                      {getMergedCovers(settings).map((cover) => {
+                        const isOwned = (user?.ownedCovers || ['']).includes(cover.url) || cover.price === 0 || user?.role === 'admin';
+                        const isActive = (user?.coverUrl || '') === cover.url;
+                        const isAvail = cover.isAvailable !== false;
+                        
+                        if (!isAvail && !isOwned) return null; // Sembunyikan sampul yang sudah ditutup/habis jika belum dimiliki
+
                         return (
                           <div key={cover.id} className={`bg-[#181818] rounded-2xl overflow-hidden border-2 flex flex-col transition-all ${isActive ? 'border-[#ffd700] shadow-[0_0_20px_rgba(255,215,0,0.2)]' : 'border-[#2a2a2a] hover:border-[#444]'}`}>
                             <div className="h-28 w-full relative bg-[#151515]">
-                              <img 
-                                src={cover.url} 
-                                alt={cover.name} 
-                                onError={(e) => {
-                                  if (cover.fallbackUrl && e.currentTarget.src !== cover.fallbackUrl) {
-                                    e.currentTarget.src = cover.fallbackUrl;
-                                  }
-                                }}
-                                className="w-full h-full object-cover" 
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+                              {cover.url ? (
+                                <img 
+                                  src={cover.url} 
+                                  alt={cover.name} 
+                                  onError={(e) => {
+                                    if (cover.fallbackUrl && e.currentTarget.src !== cover.fallbackUrl) {
+                                      e.currentTarget.src = cover.fallbackUrl;
+                                    }
+                                  }}
+                                  className="w-full h-full object-cover" 
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-[#1e1e1e] flex flex-col items-center justify-center gap-1.5">
+                                  <div className="w-10 h-10 rounded-full border border-dashed border-gray-600 flex items-center justify-center text-gray-400">
+                                    <ImageIcon size={18} />
+                                  </div>
+                                  <span className="text-[10px] text-gray-500 font-bold">Tanpa Sampul (Polos)</span>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
                               <span className="absolute top-2 right-2 bg-black/70 text-[#ffd700] font-black text-[10px] px-2 py-0.5 rounded-full border border-[#ffd700]/30 uppercase">
                                 {cover.category}
                               </span>
@@ -3031,8 +3100,8 @@ export default function Page() {
                         <ImageIcon size={16} className="text-[#ffd700]" /> Koleksi Sampul Profil
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {PROFILE_COVERS.filter(c => (user?.ownedCovers || ['/cover-ancient-god.jpg']).includes(c.url) || c.price === 0 || user?.role === 'admin').map((c) => {
-                          const isActive = (user?.coverUrl || '/cover-ancient-god.jpg') === c.url;
+                        {PROFILE_COVERS.filter(c => (user?.ownedCovers || ['']).includes(c.url) || c.price === 0 || user?.role === 'admin').map((c) => {
+                          const isActive = (user?.coverUrl || '') === c.url;
                           return (
                             <div key={c.id} className="bg-[#121212] rounded-xl overflow-hidden border border-[#2a2a2a] flex flex-col">
                               <div className="h-16 w-full relative bg-[#151515]">
@@ -3609,12 +3678,15 @@ export default function Page() {
             >
               {/* Top Banner Cover with High Quality Wallpaper */}
               <div 
-                className="h-36 w-full relative bg-cover bg-center flex items-start justify-between p-3.5"
+                className="h-36 w-full relative bg-cover bg-center flex items-start justify-between p-3.5 bg-[#1a1a1a]"
                 style={{
-                  backgroundImage: `url(${selectedMember.coverUrl || '/cover-ancient-god.jpg'})`
+                  backgroundImage: selectedMember.coverUrl ? `url(${selectedMember.coverUrl})` : 'none'
                 }}
               >
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-[#111111] pointer-events-none" />
+                {!selectedMember.coverUrl && (
+                  <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+                )}
                 
                 {/* Back / Close Buttons */}
                 <button 
@@ -3809,6 +3881,9 @@ function AdminDashboard({
 }) {
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
+  const [editingPointUser, setEditingPointUser] = useState<User | null>(null);
+  const [pointInputVal, setPointInputVal] = useState<string>('');
+  const [pointSearchQuery, setPointSearchQuery] = useState<string>('');
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "users"), (snapshot) => {
@@ -3991,6 +4066,47 @@ function AdminDashboard({
     }
     onUpdateSettings({ ...settings, styleList: updatedList });
     alert(`Status ${border.name} sekarang: ${newStatus ? 'Tersedia di Toko' : 'Ditutup / Habis'}`);
+  };
+
+  const handleUpdateCoverPrice = (coverId: string) => {
+    const currentList = getMergedCovers(settings);
+    const cover = currentList.find(c => c.id === coverId);
+    if (!cover) return;
+
+    const input = prompt(`Atur harga baru untuk sampul "${cover.name}" (Poin):`, String(cover.price));
+    if (input !== null && !isNaN(Number(input))) {
+      const newPrice = Math.max(0, parseInt(input, 10));
+      const existingConfigs = settings.coverList || [];
+      const index = existingConfigs.findIndex(c => c.id === coverId);
+
+      let updatedList: CoverItemConfig[];
+      if (index >= 0) {
+        updatedList = existingConfigs.map(c => c.id === coverId ? { ...c, price: newPrice } : c);
+      } else {
+        updatedList = [...existingConfigs, { ...cover, price: newPrice, isAvailable: cover.isAvailable !== false }];
+      }
+      onUpdateSettings({ ...settings, coverList: updatedList });
+      alert(`Harga sampul "${cover.name}" berhasil diubah menjadi ${newPrice.toLocaleString()} Poin!`);
+    }
+  };
+
+  const handleToggleCoverAvailability = (coverId: string) => {
+    const currentList = getMergedCovers(settings);
+    const cover = currentList.find(c => c.id === coverId);
+    if (!cover) return;
+
+    const newStatus = !(cover.isAvailable !== false);
+    const existingConfigs = settings.coverList || [];
+    const index = existingConfigs.findIndex(c => c.id === coverId);
+
+    let updatedList: CoverItemConfig[];
+    if (index >= 0) {
+      updatedList = existingConfigs.map(c => c.id === coverId ? { ...c, isAvailable: newStatus } : c);
+    } else {
+      updatedList = [...existingConfigs, { ...cover, isAvailable: newStatus }];
+    }
+    onUpdateSettings({ ...settings, coverList: updatedList });
+    alert(`Status sampul "${cover.name}" sekarang: ${newStatus ? 'Tersedia di Toko' : 'Ditutup / Habis'}`);
   };
 
   const handleAddVoucher = (e: FormEvent<HTMLFormElement>) => {
@@ -4212,6 +4328,64 @@ function AdminDashboard({
                           </button>
                         ) : (
                           <span className="text-[10px] text-gray-500 px-2">Gratis</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 2.5 Katalog Sampul Profil (Harga & Ketersediaan) */}
+            <div className="mb-6 pb-6 border-b border-[#333]">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-xs font-bold text-gray-300 uppercase tracking-wide">Katalog Sampul Profil</span>
+                <span className="text-[10px] text-gray-500">{getMergedCovers(settings).length} Model</span>
+              </div>
+              <div className="flex flex-col gap-2.5 max-h-[260px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-[#ffd700]">
+                {getMergedCovers(settings).map((cover) => {
+                  const isAvail = cover.isAvailable !== false;
+                  return (
+                    <div key={cover.id} className="bg-[#181818] p-3 rounded-xl border border-[#2a2a2a] flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-10 h-6 rounded flex items-center justify-center bg-black/60 border border-[#444] shrink-0 overflow-hidden relative">
+                          {cover.url ? (
+                            <img src={cover.url} alt={cover.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[8px] font-bold text-gray-500">KOSONG</span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-black text-white truncate">{cover.name}</p>
+                          <p className="text-[10px] text-gray-400 truncate">{cover.category} • {cover.price.toLocaleString()} Poin</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {cover.id !== 'none' && (
+                          <button 
+                            type="button"
+                            onClick={() => handleUpdateCoverPrice(cover.id)}
+                            className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer"
+                            title="Ubah harga sampul"
+                          >
+                            Ubah Harga
+                          </button>
+                        )}
+                        {cover.id !== 'none' ? (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleCoverAvailability(cover.id)}
+                            className={`px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer ${
+                              isAvail 
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-black' 
+                                : 'bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white'
+                            }`}
+                          >
+                            {isAvail ? 'Buka' : 'Tutup'}
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-gray-500 px-2">Default</span>
                         )}
                       </div>
                     </div>
@@ -4449,17 +4623,12 @@ function AdminDashboard({
                       )}
                       <button 
                         onClick={() => {
-                          const newPoints = prompt('Set poin untuk ' + u.nama + ':', String(u.points || 0));
-                          if (newPoints !== null && !isNaN(Number(newPoints))) {
-                            
-                              
-                            updateDoc(doc(db, "users", u.wa), { points: Number(newPoints) });
-                            
-                          }
+                          setEditingPointUser(u);
+                          setPointInputVal(String(u.points || 0));
                         }}
-                        className="px-3 py-2 bg-[#ffd700]/10 text-[#ffd700] border border-[#ffd700]/30 hover:bg-[#ffd700] hover:text-black rounded-lg text-[10px] font-bold uppercase transition-colors"
+                        className="px-3 py-2 bg-[#ffd700]/10 text-[#ffd700] border border-[#ffd700]/30 hover:bg-[#ffd700] hover:text-black rounded-lg text-[10px] font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer"
                       >
-                        Poin
+                        <Star size={11} fill="#ffd700" /> Poin
                       </button>
                       <button 
                         onClick={() => handleTogglePayment(u.wa, !!u.isPaid)} 
@@ -4479,26 +4648,37 @@ function AdminDashboard({
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <div>
                 <h3 className="text-[#ffd700] font-black text-xl uppercase tracking-widest flex items-center gap-2">
-                  <Star className="text-[#ffd700]" size={20} fill="#ffd700" /> Manajemen Poin & Border
+                  <Star className="text-[#ffd700]" size={20} fill="#ffd700" /> Menu Manajemen Poin Member
                 </h3>
-                <p className="text-xs text-[#888] mt-0.5">Kelola saldo poin, tambah reward MVP/kehadiran, atau berikan custom border ke anggota.</p>
+                <p className="text-xs text-[#888] mt-0.5">Ubah jumlah saldo poin anggota, tambah bonus/reward, atau kurangi poin pelanggaran.</p>
               </div>
-              {onExportCSV && (
-                <button 
-                  onClick={() => onExportCSV(activeUsers)}
-                  className="px-3 py-1.5 bg-[#ffd700]/20 hover:bg-[#ffd700] text-[#ffd700] hover:text-black border border-[#ffd700]/40 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer"
-                  title="Ekspor Data Poin & Anggota ke CSV"
-                >
-                  <Download size={13} /> Ekspor Data CSV
-                </button>
-              )}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <input 
+                  type="text" 
+                  placeholder="Cari anggota..." 
+                  value={pointSearchQuery}
+                  onChange={(e) => setPointSearchQuery(e.target.value)}
+                  className="px-3 py-1.5 bg-[#181818] border border-white/20 rounded-lg text-xs text-white focus:outline-none focus:border-[#ffd700] w-full sm:w-40"
+                />
+                {onExportCSV && (
+                  <button 
+                    onClick={() => onExportCSV(activeUsers)}
+                    className="px-3 py-1.5 bg-[#ffd700]/20 hover:bg-[#ffd700] text-[#ffd700] hover:text-black border border-[#ffd700]/40 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer shrink-0"
+                    title="Ekspor Data Poin & Anggota ke CSV"
+                  >
+                    <Download size={13} /> CSV
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="flex flex-col gap-3 max-h-[350px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#ffd700] pr-2">
+            <div className="flex flex-col gap-3 max-h-[380px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#ffd700] pr-2">
               {activeUsers.length === 0 ? (
                 <p className="text-xs text-[#888] italic">Belum ada anggota yang aktif.</p>
               ) : (
-                activeUsers.map((u) => {
+                activeUsers
+                  .filter(u => !pointSearchQuery || u.nama.toLowerCase().includes(pointSearchQuery.toLowerCase()) || u.wa.includes(pointSearchQuery))
+                  .map((u) => {
                   const currentBorder = AVATAR_BORDERS.find(b => b.id === (u.avatarBorder || 'classic'))?.name || 'Classic';
                   return (
                     <div key={u.wa} className="flex flex-col md:flex-row justify-between items-start md:items-center bg-[#181818] p-4 rounded-xl border border-[#333] hover:border-[#ffd700]/50 transition-all gap-4">
@@ -4510,8 +4690,8 @@ function AdminDashboard({
                             {u.jerseyNumber && <span className="text-[10px] text-[#888]">#{u.jerseyNumber}</span>}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[11px] text-[#ffd700] font-black flex items-center gap-1 bg-[#ffd700]/10 px-2 py-0.5 rounded-full border border-[#ffd700]/20">
-                              <Star size={10} fill="#ffd700" /> {(u.points || 0).toLocaleString()} Poin
+                            <span className="text-[11px] text-[#ffd700] font-black flex items-center gap-1 bg-[#ffd700]/10 px-2.5 py-0.5 rounded-full border border-[#ffd700]/30">
+                              <Star size={11} fill="#ffd700" /> {(u.points || 0).toLocaleString()} Poin
                             </span>
                             <span className="text-[10px] text-gray-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
                               Border: {currentBorder}
@@ -4526,7 +4706,7 @@ function AdminDashboard({
                             const newPoints = (u.points || 0) + 1000;
                             updateDoc(doc(db, "users", u.wa), { points: newPoints });
                           }}
-                          className="px-2 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 hover:text-black text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-black transition-all"
+                          className="px-2 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 hover:text-black text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-black transition-all cursor-pointer"
                           title="Tambah 1.000 Poin"
                         >
                           +1K
@@ -4536,7 +4716,7 @@ function AdminDashboard({
                             const newPoints = (u.points || 0) + 5000;
                             updateDoc(doc(db, "users", u.wa), { points: newPoints });
                           }}
-                          className="px-2 py-1.5 bg-cyan-500/10 hover:bg-cyan-500 hover:text-black text-cyan-400 border border-cyan-500/30 rounded-lg text-[10px] font-black transition-all"
+                          className="px-2 py-1.5 bg-cyan-500/10 hover:bg-cyan-500 hover:text-black text-cyan-400 border border-cyan-500/30 rounded-lg text-[10px] font-black transition-all cursor-pointer"
                           title="Tambah 5.000 Poin (MVP/Bonus)"
                         >
                           +5K
@@ -4546,21 +4726,19 @@ function AdminDashboard({
                             const newPoints = (u.points || 0) + 10000;
                             updateDoc(doc(db, "users", u.wa), { points: newPoints });
                           }}
-                          className="px-2 py-1.5 bg-[#ffd700]/10 hover:bg-[#ffd700] hover:text-black text-[#ffd700] border border-[#ffd700]/30 rounded-lg text-[10px] font-black transition-all"
+                          className="px-2 py-1.5 bg-[#ffd700]/10 hover:bg-[#ffd700] hover:text-black text-[#ffd700] border border-[#ffd700]/30 rounded-lg text-[10px] font-black transition-all cursor-pointer"
                           title="Tambah 10.000 Poin"
                         >
                           +10K
                         </button>
                         <button
                           onClick={() => {
-                            const val = prompt(`Set jumlah poin manual untuk ${u.nama}:`, String(u.points || 0));
-                            if (val !== null && !isNaN(Number(val))) {
-                              updateDoc(doc(db, "users", u.wa), { points: Number(val) });
-                            }
+                            setEditingPointUser(u);
+                            setPointInputVal(String(u.points || 0));
                           }}
-                          className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[10px] font-bold uppercase transition-all"
+                          className="px-3 py-1.5 bg-gradient-to-r from-[#ffd700] to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-black rounded-lg text-[10px] font-black uppercase transition-all shadow-sm cursor-pointer flex items-center gap-1"
                         >
-                          Set Poin
+                          <Star size={11} fill="black" /> Ubah Poin
                         </button>
                         <button
                           onClick={() => {
@@ -4581,7 +4759,7 @@ function AdminDashboard({
                               }
                             }
                           }}
-                          className="px-2.5 py-1.5 bg-purple-500/20 hover:bg-purple-500 text-purple-300 hover:text-white border border-purple-500/40 rounded-lg text-[10px] font-bold uppercase transition-all"
+                          className="px-2.5 py-1.5 bg-purple-500/20 hover:bg-purple-500 text-purple-300 hover:text-white border border-purple-500/40 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer"
                         >
                           Beri Border
                         </button>
@@ -4592,6 +4770,121 @@ function AdminDashboard({
               )}
             </div>
           </div>
+
+          {/* MODAL / POPUP UBAH JUMLAH POIN KHUSUS ADMIN */}
+          {editingPointUser && (
+            <div 
+              className="fixed inset-0 bg-black/85 backdrop-blur-md z-[700] flex justify-center items-center p-4 animate-in fade-in duration-200"
+              onClick={() => setEditingPointUser(null)}
+            >
+              <div 
+                className="bg-[#141414] w-full max-w-md rounded-2xl border border-[#ffd700]/50 p-6 shadow-[0_10px_40px_rgba(255,215,0,0.15)] animate-in zoom-in-95 duration-200 relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button 
+                  onClick={() => setEditingPointUser(null)}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-[#ffd700]/10 border border-[#ffd700]/30 flex items-center justify-center text-[#ffd700]">
+                    <Star size={22} fill="#ffd700" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-black text-lg uppercase tracking-wide">Ubah Jumlah Poin</h3>
+                    <p className="text-xs text-[#888]">Member: <span className="text-[#ffd700] font-bold">{editingPointUser.nama}</span> ({editingPointUser.id || editingPointUser.wa})</p>
+                  </div>
+                </div>
+
+                <div className="bg-[#1c1c1c] p-3.5 rounded-xl border border-white/10 mb-4 flex items-center justify-between">
+                  <span className="text-xs text-gray-400 font-medium">Saldo Poin Sekarang:</span>
+                  <span className="text-sm font-black text-[#ffd700] flex items-center gap-1">
+                    <Star size={13} fill="#ffd700" /> {(editingPointUser.points || 0).toLocaleString()} Poin
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 uppercase mb-1.5">Jumlah Poin Baru</label>
+                    <input 
+                      type="number" 
+                      value={pointInputVal}
+                      onChange={(e) => setPointInputVal(e.target.value)}
+                      placeholder="Masukkan total poin baru"
+                      className="w-full p-3.5 rounded-xl bg-black border-2 border-[#ffd700]/40 text-white font-black text-lg focus:outline-none focus:border-[#ffd700] transition-colors"
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* Preset Penyesuaian Cepat */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1.5">Preset Penyesuaian Cepat</label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[
+                        { label: '+500', val: 500 },
+                        { label: '+2.000', val: 2000 },
+                        { label: '+5.000', val: 5000 },
+                        { label: '+20.000', val: 20000 },
+                        { label: '-1.000', val: -1000 },
+                        { label: '-5.000', val: -5000 },
+                        { label: 'Set 0', val: 0, reset: true },
+                        { label: 'Set 10K', val: 10000, reset: true },
+                      ].map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            if (preset.reset) {
+                              setPointInputVal(String(preset.val));
+                            } else {
+                              const curr = Number(pointInputVal) || 0;
+                              setPointInputVal(String(Math.max(0, curr + preset.val)));
+                            }
+                          }}
+                          className="py-2 px-1 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-bold text-gray-200 transition-all text-center cursor-pointer"
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingPointUser(null)}
+                      className="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold uppercase transition-colors"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const parsed = Number(pointInputVal);
+                        if (isNaN(parsed) || parsed < 0) {
+                          alert('Mohon masukkan angka poin yang valid (minimal 0)!');
+                          return;
+                        }
+                        try {
+                          await updateDoc(doc(db, "users", editingPointUser.wa), { points: parsed });
+                          alert(`Berhasil memperbarui poin ${editingPointUser.nama} menjadi ${parsed.toLocaleString()} Poin!`);
+                          setEditingPointUser(null);
+                        } catch (err) {
+                          console.error(err);
+                          alert('Gagal memperbarui poin. Silakan coba lagi.');
+                        }
+                      }}
+                      className="flex-1 py-3 bg-gradient-to-r from-[#ffd700] to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-black rounded-xl text-xs font-black uppercase transition-all shadow-md cursor-pointer"
+                    >
+                      Simpan Poin
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="bg-[#111]/60 backdrop-blur-md border border-[#333] p-6 rounded-2xl">
             <div className="flex justify-between items-center mb-4">
